@@ -39,6 +39,10 @@ export async function setGuestCookie(eventId: string, token: string) {
   (await cookies()).set(guestCookie(eventId), token, { ...baseCookie, maxAge: 60 * 60 * 24 * 60 });
 }
 
+export async function clearGuestCookie(eventId: string) {
+  (await cookies()).delete(guestCookie(eventId));
+}
+
 export async function currentGuest(event: EventRow) {
   return getGuestByToken(event.id, (await cookies()).get(guestCookie(event.id))?.value);
 }

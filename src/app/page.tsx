@@ -23,6 +23,10 @@ export default function Home() {
         <Link href="/host" className="text-sm text-muted underline-offset-4 hover:text-white hover:underline">
           Hosting a party? Host dashboard →
         </Link>
+        <nav className="flex gap-4 text-xs text-muted">
+          <Link href="/support" className="hover:text-white">Help</Link>
+          <Link href="/privacy" className="hover:text-white">Privacy</Link>
+        </nav>
       </footer>
     </main>
   );

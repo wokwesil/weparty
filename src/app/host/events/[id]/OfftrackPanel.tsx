@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/Toast";
 import { apiFetch } from "@/lib/client";
+import { isNativeApp } from "@/lib/native";
 import { appendToLibraryPlaylist, connectAppleMusic, createLibraryPlaylist, isAppleMusicAvailable } from "@/lib/musickit";
 import type { QueueSnapshot } from "@/lib/types";
 
@@ -103,7 +104,13 @@ export function OfftrackPanel({
     <section className="grid gap-6 lg:grid-cols-2">
       <div className="glass flex flex-col gap-4 rounded-3xl p-5">
         <h2 className="font-display text-lg font-bold">Apple Music</h2>
-        {available === false && (
+        {available === false && isNativeApp() && (
+          <p className="rounded-2xl bg-amber-500/15 p-3 text-sm text-amber-100">
+            Apple Music sign-in only works in a web browser. Open this control room in Safari or Chrome on your phone or laptop to make
+            Apple Music playlists.
+          </p>
+        )}
+        {available === false && !isNativeApp() && (
           <p className="rounded-2xl bg-amber-500/15 p-3 text-sm text-amber-100">
             Apple Music isn&apos;t connected to WeParty yet (it needs the Apple Developer key; see docs/APPLE_MUSIC.md). Until then, use the exports in
             “QR, details &amp; export”: every song has its Apple Music link.

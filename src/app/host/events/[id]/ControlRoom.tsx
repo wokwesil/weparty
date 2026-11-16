@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Artwork } from "@/components/Artwork";
 import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Wordmark } from "@/components/Brand";
+import { shareLink } from "@/lib/native";
 import { Requester } from "@/components/SongCard";
 import { SongBrowser } from "@/components/SongBrowser";
 import { StatusPill } from "@/components/StatusPill";
@@ -515,6 +516,15 @@ function SharePanel({ eventId, code, joinUrl, initial }: { eventId: string; code
           <a href={`/api/host/events/${eventId}/qr?format=png`} className="btn btn-ghost px-4 py-2 text-sm">Download PNG</a>
           <a href={`/api/host/events/${eventId}/qr?format=svg`} className="btn btn-ghost px-4 py-2 text-sm">Download SVG</a>
           <button className="btn btn-ghost px-4 py-2 text-sm" onClick={() => navigator.clipboard.writeText(joinUrl).then(() => toast("Link copied"))}>Copy link</button>
+          <button
+            className="btn btn-ghost px-4 py-2 text-sm"
+            onClick={async () => {
+              const r = await shareLink({ title: `Join ${d.name} on We Party`, text: `Pick songs and vote on the music at ${d.name} 🎶`, url: joinUrl });
+              if (r === "copied") toast("Link copied");
+            }}
+          >
+            Share invite
+          </button>
         </div>
       </div>
       <div className="flex flex-col gap-6">

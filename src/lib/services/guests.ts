@@ -147,6 +147,22 @@ export async function removeGuest(hostId: string, eventId: string, guestId: stri
   await requireEventRole(hostId, eventId, "dj");
   const [g] = await sql<GuestRow[]>`select * from guests where id = ${guestId} and event_id = ${eventId}`;
   if (!g) throw notFound("Guest not found.");
+  await purgeGuest(eventId, guestId);
+  await logEvent(eventId, `host:${hostId}`, "guest_removed", { instagram: g.instagram_username });
+  await notifyEventChanged(eventId, "people");
+}
+
+/**
+ * A guest deletes their own info from a party: profile, photo, hearts and song
+ * requests. Songs other guests also picked stay in the queue.
+ */
+export async function deleteGuestSelf(guest: GuestRow) {
+  await purgeGuest(guest.event_id, guest.id);
+  await logEvent(guest.event_id, "system", "guest_deleted_self", {});
+  await notifyEventChanged(guest.event_id, "people");
+}
+
+async function purgeGuest(eventId: string, guestId: string) {
   await sql.begin(async (tx) => {
     await tx`update queue_items set status = 'removed'
              where event_id = ${eventId} and submitted_by = ${guestId} and status = 'queued'
@@ -159,8 +175,6 @@ export async function removeGuest(hostId: string, eventId: string, guestId: stri
                and exists (select 1 from song_requests r where r.queue_item_id = q.id and r.guest_id <> ${guestId})`;
     await tx`delete from guests where id = ${guestId}`;
   });
-  await logEvent(eventId, `host:${hostId}`, "guest_removed", { instagram: g.instagram_username });
-  await notifyEventChanged(eventId, "people");
 }
 
 export function assertGuestCanAct(event: EventRow) {

@@ -3,7 +3,7 @@ import { Backdrop, Wordmark } from "@/components/Brand";
 import { listHostEvents } from "@/lib/services/events";
 import { StatusPill } from "@/components/StatusPill";
 import { requireHostPage } from "./auth";
-import { HostHeaderActions, NewEventForm, TeamPanel } from "./DashboardClient";
+import { DeleteAccount, HostHeaderActions, NewEventForm, TeamPanel } from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Host dashboard" };
@@ -61,6 +61,11 @@ export default async function HostDashboard() {
             </div>
           </div>
           <TeamPanel orgs={host.orgs} />
+          <div className="flex flex-wrap gap-x-4 gap-y-2 px-1 text-xs text-muted">
+            <Link href="/support" className="hover:text-white">Help &amp; support</Link>
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
+          </div>
+          <DeleteAccount />
         </aside>
       </section>
     </main>

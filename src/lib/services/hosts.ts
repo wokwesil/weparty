@@ -56,6 +56,35 @@ export async function loginHost(emailRaw: string, password: string) {
   return row.id;
 }
 
+/**
+ * Permanently deletes a host account (required by the App Store and Google Play).
+ * Teams the host runs alone are deleted with all their events, guests and songs.
+ * Teams shared with other hosts are kept for them; if nobody else owns it,
+ * the longest-serving remaining member becomes the owner.
+ */
+export async function deleteHostAccount(hostId: string, password: string) {
+  const [row] = await sql<{ password_hash: string }[]>`select password_hash from hosts where id = ${hostId}`;
+  if (!row) throw unauthorized("Please sign in as a host.");
+  if (!(await verifyPassword(password, row.password_hash))) throw badRequest("That password isn't right.");
+  await sql.begin(async (tx) => {
+    const orgs = await tx<{ org_id: string; others: number }[]>`
+      select m.org_id, (select count(*)::int from org_members o where o.org_id = m.org_id and o.host_id <> ${hostId}) as others
+      from org_members m where m.host_id = ${hostId}`;
+    const solo = orgs.filter((o) => o.others === 0).map((o) => o.org_id);
+    const shared = orgs.filter((o) => o.others > 0).map((o) => o.org_id);
+    if (solo.length) await tx`delete from organizations where id in ${tx(solo)}`;
+    await tx`delete from hosts where id = ${hostId}`;
+    for (const orgId of shared) {
+      await tx`
+        update org_members set role = 'owner'
+        where org_id = ${orgId}
+          and not exists (select 1 from org_members where org_id = ${orgId} and role = 'owner')
+          and host_id = (select host_id from org_members where org_id = ${orgId}
+                         order by case role when 'admin' then 0 else 1 end, created_at limit 1)`;
+    }
+  });
+}
+
 export async function getHostAccount(hostId: string): Promise<HostAccount | null> {
   const [h] = await sql<{ id: string; email: string; display_name: string }[]>`
     select id, email, display_name from hosts where id = ${hostId}`;
