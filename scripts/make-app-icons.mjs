@@ -6,6 +6,7 @@
 // Writes:
 //   public/icons/*            website + installable app (PWA) icons
 //   public/favicon.ico        browser tab icon
+//   store/*.png               App Store / Google Play listing icon and feature graphic
 //   assets/*.png              source images for the iPhone/Android apps
 //                             (then run `npm run app:assets` to make every native size)
 //
@@ -145,7 +146,26 @@ for (const [file, [svg, size, transparent]] of Object.entries(files)) {
   console.log("wrote", file);
 }
 
+// Store listing graphics
+await mkdir(out("store"), { recursive: true });
+await writeFile(out("store/app-store-icon-1024.png"), await render(iconSvg({ size: 1024, scale: 0.86 }), 1024));
+await writeFile(out("store/play-store-icon-512.png"), await render(iconSvg({ size: 512, scale: 0.86 }), 512));
+console.log("wrote store/app-store-icon-1024.png, store/play-store-icon-512.png");
+
 const css = await fontFace();
+await page.setViewportSize({ width: 1024, height: 500 });
+await page.setContent(`<!doctype html><html><head><style>${css}
+  html,body{margin:0;width:1024px;height:500px;overflow:hidden}
+  .wrap{width:1024px;height:500px;display:flex;align-items:center;justify-content:center;gap:48px;
+    background:radial-gradient(circle at 15% 10%, ${PINK}40, transparent 50%), radial-gradient(circle at 90% 95%, ${CYAN}30, transparent 50%), ${NIGHT}}
+  .word{font-family:Unbounded;font-weight:900;font-size:92px;letter-spacing:-3px;line-height:1;
+    background:linear-gradient(90deg, ${PINK}, ${VIOLET}, ${CYAN});-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tag{font-family:Unbounded;font-weight:500;font-size:26px;color:#f5f3ff;margin-top:18px}
+  </style></head><body><div class="wrap">${iconSvg({ size: 190, background: false })}<div><div class="word">WEPARTY</div><div class="tag">Where We All Control the Vibes.</div></div></div></body></html>`);
+await page.evaluate(() => document.fonts.ready);
+await writeFile(out("store/play-feature-graphic-1024x500.png"), await page.screenshot({ clip: { x: 0, y: 0, width: 1024, height: 500 } }));
+console.log("wrote store/play-feature-graphic-1024x500.png");
+
 const splash = await render(splashHtml(2732, css), 2732);
 await writeFile(out("assets/splash.png"), splash);
 await writeFile(out("assets/splash-dark.png"), splash);

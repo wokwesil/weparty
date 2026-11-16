@@ -17,6 +17,8 @@ Last updated: Nov 16, 2026
 | 9 | Unique replay link per event; share sheet, copy link, SMS, WhatsApp, Instagram Story image, link preview image, .txt list | ✅ |
 | 10 | Offtrack: researched (no public API); live Apple Music playlist hand-off with append; exports | ✅ (needs testing with real Offtrack) |
 | 11 | Event history on dashboard, per-event insights: attendees, songs, picks, hearts, voters, played, skipped, top songs, top contributors, hearts over time, playlist links | ✅ |
+| App 1 | Installable website (PWA): manifest, icons, iPhone tags, offline screen, service worker (no private data cached), install tip | ✅ (branch app-setup) |
+| App 2 | iPhone + Android apps (Capacitor, loads live site): camera QR scanner, share sheet, haptics, splash, status bar, swipe-back; privacy + support pages; host account deletion and guest "delete my info" | ✅ code ready, needs store accounts → APP_SETUP.md |
 | 12 | Organizations (host/venue/DJ/agency/college), team roles (owner/admin/dj), plan + branding + billing fields reserved, multiple simultaneous events, optional host invite code | ✅ architecture (no payments yet, by design) |
 
 ## Needs external permissions or accounts
@@ -25,6 +27,7 @@ Last updated: Nov 16, 2026
 - [ ] **Supabase project** (William, free) → see SETUP.md
 - [ ] **Vercel project** (William, free) → see SETUP.md
 - [ ] **Apple Developer Program** ($99/yr) for Apple Music API, library browsing and playlist creation → APPLE_MUSIC.md
+- [ ] **App stores**: Apple Developer ($99/yr, same account as above) and Google Play Console ($25), plus `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel → APP_SETUP.md
 - [ ] **Offtrack**: confirm with the real app that a WeParty playlist in Apple Music opens and mixes; ask Offtrack about an API
 
 ## Tests passed

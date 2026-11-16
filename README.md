@@ -9,7 +9,9 @@ fairness rule decide the order. The host runs everything from a control room on
 their phone or laptop. When the night ends, everyone gets **YOUR WEPARTY REPLAY**:
 a shareable playlist page of the songs that actually played.
 
-No app download for guests. Works on iPhone and Android browsers.
+No app download for guests. Works on iPhone and Android browsers, can be
+installed to the home screen, and ships as iPhone and Android apps
+(see [APP_SETUP.md](APP_SETUP.md)).
 
 ## What's in here
 
@@ -24,6 +26,8 @@ No app download for guests. Works on iPhone and Android browsers.
 | `supabase/migrations/` | Database tables, indexes and security rules |
 | `tests/` | Unit, database and full browser tests |
 | `docs/` | Setup, deployment, integrations, architecture, checklist |
+| `ios/`, `android/`, `capacitor.config.ts` | iPhone and Android apps (Capacitor) |
+| `public/sw.js`, `src/app/manifest.ts` | Installable website (PWA) and offline screen |
 
 ## Docs
 
@@ -33,6 +37,7 @@ No app download for guests. Works on iPhone and Android browsers.
 - [Apple Music](docs/APPLE_MUSIC.md) · [Instagram](docs/INSTAGRAM.md) · [Offtrack](docs/OFFTRACK.md)
 - [Testing](docs/TESTING.md)
 - [Running the Nov 22 party](docs/PARTY_NIGHT.md)
+- [Installable website + App Store / Google Play apps](APP_SETUP.md) · [Store listing text](STORE_LISTING.md)
 
 ## Quick start for developers
 
