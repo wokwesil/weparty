@@ -41,9 +41,11 @@
   color-scheme: dark;
 }
 
-html,
-body {
+html {
   background: var(--color-night);
+}
+
+body {
   color: #f5f3ff;
   -webkit-tap-highlight-color: transparent;
 }

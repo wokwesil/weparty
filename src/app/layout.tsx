@@ -4,6 +4,7 @@ import "@fontsource-variable/inter";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: { default: "WeParty — Where We All Control the Vibes", template: "%s · WeParty" },
   description: "Scan. Connect. Select. Vote. Party. Replay. The social music queue for parties. Powered by Offtrack.",
   applicationName: "WeParty",

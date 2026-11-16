@@ -81,7 +81,7 @@ export function ReplayActions({
         <button onClick={copy} className="btn btn-ghost px-3 py-3 text-sm">{copied ? "Copied!" : "Copy link"}</button>
         <a href={`sms:?&body=${smsBody}`} className="btn btn-ghost px-3 py-3 text-sm">Text it</a>
         <a href={`https://wa.me/?text=${smsBody}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost px-3 py-3 text-sm">WhatsApp</a>
-        <a href={`/e/${code}/replay/story`} download={`weparty-${code}-story.png`} className="btn btn-ghost px-3 py-3 text-sm">Instagram Story image</a>
+        <a href={`/e/${code}/replay/story`} download={`weparty-${code}-story.png`} className="btn btn-ghost px-3 py-3 text-sm">Story image (Instagram)</a>
         <a href={`/e/${code}/replay/songs`} className="btn btn-ghost px-3 py-3 text-sm">Song list (.txt)</a>
       </div>
       <p className="text-center text-xs text-muted">

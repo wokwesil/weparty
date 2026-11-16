@@ -49,13 +49,13 @@ export async function GET(req: Request, ctx: Ctx) {
           <div style={{ fontSize: og ? 28 : 34, letterSpacing: 10, color: "#ff2e88", fontWeight: 800 }}>MY WEPARTY REPLAY</div>
           <div style={{ fontSize: og ? 64 : 84, fontWeight: 900, marginTop: 16, textAlign: og ? "left" : "center", lineHeight: 1.05 }}>{event.name}</div>
           <div style={{ fontSize: og ? 28 : 36, color: "#a39fbd", marginTop: 16 }}>
-            {date} · {replay.stats.played} songs · {replay.stats.guests} guests · {replay.stats.votes} hearts
+            {`${date} · ${replay.stats.played} songs · ${replay.stats.guests} guests · ${replay.stats.votes} hearts`}
           </div>
           {songs.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", marginTop: 50, gap: 14, width: "100%" }}>
               {songs.map((s, i) => (
                 <div key={s.id} style={{ display: "flex", fontSize: 36, gap: 20 }}>
-                  <span style={{ color: "#8b5cf6", width: 50 }}>{i + 1}</span>
+                  <span style={{ color: "#8b5cf6", width: 50 }}>{String(i + 1)}</span>
                   <span style={{ fontWeight: 700, maxWidth: 520, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{s.title}</span>
                   <span style={{ color: "#a39fbd", maxWidth: 300, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{s.artist}</span>
                 </div>
