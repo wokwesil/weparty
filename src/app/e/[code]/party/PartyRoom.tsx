@@ -10,6 +10,7 @@ import { NowPlaying, SongCard } from "@/components/SongCard";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { apiFetch, resizeImage } from "@/lib/client";
 import { hapticTap, shareLink } from "@/lib/native";
+import { supportMailto } from "@/lib/site";
 import type { GuestMe, QueueSnapshot, SongView } from "@/lib/types";
 import { useLiveData } from "@/lib/useLive";
 
@@ -300,8 +301,23 @@ function People({ code, eventId, meId }: { code: string; eventId: string; meId: 
                 ))}
               </div>
             )}
-            <p className="mt-2 text-[11px] text-muted">
-              {p.songs.length} song{p.songs.length === 1 ? "" : "s"} · ♥ {p.heartsReceived} hearts received
+            <p className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted">
+              <span>
+                {p.songs.length} song{p.songs.length === 1 ? "" : "s"} · ♥ {p.heartsReceived} hearts received
+              </span>
+              {p.id !== meId && supportMailto("x") && (
+                <a
+                  className="underline-offset-2 hover:text-white hover:underline"
+                  href={
+                    supportMailto(
+                      `Report a guest at party ${code}`,
+                      `Party code: ${code}\nGuest: ${p.displayName} (@${p.instagram})\n\nWhat happened:\n`,
+                    )!
+                  }
+                >
+                  Report
+                </a>
+              )}
             </p>
           </li>
         ))}
