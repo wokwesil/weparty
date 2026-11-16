@@ -213,6 +213,20 @@ function NativeSetup() {
         }
       });
       cleanups.push(() => back.remove(), () => open.remove());
+
+      // Replay files (story image, song list) open in an in-app browser sheet with a
+      // Done button, where they can be saved or shared, instead of replacing the app screen.
+      const onClick = (e: MouseEvent) => {
+        const a = (e.target as HTMLElement | null)?.closest?.("a");
+        if (!a?.href) return;
+        const url = new URL(a.href, window.location.href);
+        if (url.origin === window.location.origin && /^\/e\/[^/]+\/replay\/(story|songs)\/?$/.test(url.pathname)) {
+          e.preventDefault();
+          import("@capacitor/browser").then(({ Browser }) => Browser.open({ url: url.href })).catch(() => {});
+        }
+      };
+      document.addEventListener("click", onClick, true);
+      cleanups.push(() => document.removeEventListener("click", onClick, true));
     })().catch(() => {});
     return () => cleanups.forEach((c) => c());
   }, [router]);

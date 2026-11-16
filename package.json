@@ -2,7 +2,7 @@
   "name": "weparty",
   "version": "0.1.0",
   "private": true,
-  "description": "WeParty — Where We All Control the Vibes. Powered by Offtrack.",
+  "description": "WeParty \u2014 Where We All Control the Vibes. Powered by Offtrack.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +10,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "node tests/e2e/party-flow.mjs",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "app:icons": "node scripts/make-app-icons.mjs",
+    "app:assets": "npx -y @capacitor/assets@4.0.0 generate --ios --android --iconBackgroundColor \"#07060c\" --iconBackgroundColorDark \"#07060c\" --splashBackgroundColor \"#07060c\" --splashBackgroundColorDark \"#07060c\"",
+    "app:sync": "cap sync",
+    "app:ios": "cap sync ios && cap open ios",
+    "app:android": "cap sync android && cap open android"
   },
   "engines": {
     "node": ">=20"
@@ -18,6 +23,7 @@
   "dependencies": {
     "@capacitor/app": "^8.1.2",
     "@capacitor/barcode-scanner": "^3.1.3",
+    "@capacitor/browser": "^8.0.5",
     "@capacitor/core": "^8.6.2",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/share": "^8.0.3",
