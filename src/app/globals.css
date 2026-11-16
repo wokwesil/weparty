@@ -160,3 +160,14 @@ body {
     display: none !important;
   }
 }
+
+/* Keep content clear of rounded corners and the notch when a phone is turned sideways. */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Inside the iPhone/Android app: no text-selection callouts or rubber-band flashes on taps. */
+html[data-native-app] body {
+  -webkit-touch-callout: none;
+}
