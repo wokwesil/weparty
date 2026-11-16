@@ -1,4 +1,5 @@
 "use client";
+import { isNativeApp } from "./native";
 /**
  * Apple MusicKit on the web (official Apple library).
  * - The guest/host signs in to Apple Music in Apple's own window. WeParty never sees a password.
@@ -30,6 +31,9 @@ declare global {
 let loading: Promise<MusicKitInstance> | null = null;
 
 export async function isAppleMusicAvailable() {
+  // Apple's sign-in window can't open inside the iPhone/Android app, so Apple Music
+  // features stay on the website (Safari/Chrome) for now.
+  if (isNativeApp()) return false;
   const res = await fetch("/api/music/token", { cache: "no-store" });
   return res.ok;
 }

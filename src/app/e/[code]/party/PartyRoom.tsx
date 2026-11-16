@@ -9,6 +9,7 @@ import { Backdrop, Equalizer, Wordmark } from "@/components/Brand";
 import { NowPlaying, SongCard } from "@/components/SongCard";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { apiFetch, resizeImage } from "@/lib/client";
+import { hapticTap, shareLink } from "@/lib/native";
 import type { GuestMe, QueueSnapshot, SongView } from "@/lib/types";
 import { useLiveData } from "@/lib/useLive";
 
@@ -73,6 +74,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
       };
     };
     setData((d) => (d ? patch(d, on ? 1 : -1, on) : d));
+    if (on) hapticTap();
     try {
       await apiFetch(`/api/e/${code}/votes`, { method: "POST", json: { itemId: song.id, on } });
     } catch (e) {
@@ -342,6 +344,16 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
     }
   };
 
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const leave = async () => {
+    try {
+      await apiFetch(`/api/e/${code}/me`, { method: "DELETE" });
+      window.location.href = "/";
+    } catch (e) {
+      toast((e as Error).message, "error");
+    }
+  };
+
   const withdraw = async (id: string) => {
     try {
       await apiFetch(`/api/e/${code}/songs/${id}`, { method: "DELETE" });
@@ -407,9 +419,38 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
           </ul>
         )}
       </div>
+      <button
+        className="btn btn-ghost w-full"
+        onClick={async () => {
+          const r = await shareLink({
+            title: `Join ${data.event.name} on We Party`,
+            text: `Come pick songs and vote on the music at ${data.event.name} 🎶`,
+            url: `${window.location.origin}/e/${code}`,
+          });
+          if (r === "copied") toast("Party link copied");
+        }}
+      >
+        Invite friends to this party
+      </button>
       <Link href={`/e/${code}/replay`} className="text-center text-sm text-muted underline">
         Preview the party replay playlist
       </Link>
+      <div className="mt-4 flex flex-col items-center gap-2 border-t border-line pt-4 text-center text-xs text-muted">
+        {confirmLeave ? (
+          <>
+            <p>Delete your profile, photo, hearts and song picks from this party? This can&apos;t be undone.</p>
+            <div className="flex gap-2">
+              <button className="btn btn-danger px-4 py-2 text-xs" onClick={leave}>Yes, delete my info</button>
+              <button className="btn btn-ghost px-4 py-2 text-xs" onClick={() => setConfirmLeave(false)}>Cancel</button>
+            </div>
+          </>
+        ) : (
+          <button className="underline-offset-4 hover:text-white hover:underline" onClick={() => setConfirmLeave(true)}>
+            Leave party and delete my info
+          </button>
+        )}
+        <Link href="/privacy" className="underline-offset-4 hover:text-white hover:underline">Privacy policy</Link>
+      </div>
     </section>
   );
 }

@@ -114,3 +114,61 @@ export function TeamPanel({ orgs }: { orgs: { id: string; name: string; kind: st
     </div>
   );
 }
+
+/** Permanently delete the host account (the App Store and Google Play require this). */
+export function DeleteAccount() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!open) {
+    return (
+      <button className="self-start text-xs text-muted underline-offset-4 hover:text-white hover:underline" onClick={() => setOpen(true)}>
+        Delete my host account
+      </button>
+    );
+  }
+  return (
+    <form
+      className="glass flex flex-col gap-3 rounded-3xl p-5"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        setError(null);
+        try {
+          await apiFetch("/api/host/account", { method: "DELETE", json: { password } });
+          router.replace("/?account=deleted");
+        } catch (err) {
+          setError((err as Error).message);
+          setBusy(false);
+        }
+      }}
+    >
+      <h2 className="font-display text-lg font-bold">Delete account</h2>
+      <p className="text-sm text-muted">
+        This permanently deletes your host account. Teams you run alone are deleted too, with all their events, guests, songs and
+        replays. Teams shared with other hosts stay with them. This can&apos;t be undone.
+      </p>
+      <input
+        className="field"
+        type="password"
+        autoComplete="current-password"
+        placeholder="Your password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        aria-label="Password"
+      />
+      {error && <p className="text-sm text-rose-300">{error}</p>}
+      <div className="flex gap-2">
+        <button className="btn btn-danger px-4 py-2 text-sm" disabled={!password || busy}>
+          {busy ? "Deleting…" : "Delete forever"}
+        </button>
+        <button type="button" className="btn btn-ghost px-4 py-2 text-sm" onClick={() => setOpen(false)}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}

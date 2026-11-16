@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { isNativeApp, shareLink } from "@/lib/native";
 import { connectAppleMusic, createLibraryPlaylist, isAppleMusicAvailable } from "@/lib/musickit";
 
 export function ReplayActions({
@@ -25,7 +26,7 @@ export function ReplayActions({
 
   useEffect(() => {
     isAppleMusicAvailable().then(setApple).catch(() => {});
-    setCanShare(typeof navigator !== "undefined" && "share" in navigator);
+    setCanShare(isNativeApp() || (typeof navigator !== "undefined" && "share" in navigator));
   }, []);
 
   const text = `The playlist from ${eventName} 🎧 Picked and voted by the crowd on WeParty.`;
@@ -46,11 +47,7 @@ export function ReplayActions({
   };
 
   const share = async () => {
-    try {
-      await navigator.share({ title: `${eventName} · WeParty Replay`, text, url: shareUrl });
-    } catch {
-      /* cancelled */
-    }
+    await shareLink({ title: `${eventName} · WeParty Replay`, text, url: shareUrl });
   };
 
   const copy = async () => {
