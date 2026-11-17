@@ -13,7 +13,7 @@ Total time: about 30 minutes.
 2. When it's ready, open **SQL Editor → New query**, paste everything from
    `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success".
    Then do the same with each later file in that folder, in number order
-   (`0002_join_djmode_reliability.sql`, then `0003_payments.sql`, ...). Each one is safe to run twice.
+   (`0002_join_djmode_reliability.sql`, then `0003_payments.sql`, then `0004_growth.sql`). Each one is safe to run twice.
 3. Collect these values:
    - **Project Settings → Database → Connection string → Transaction pooler**.
      Copy the URI and replace `[YOUR-PASSWORD]` with your database password.

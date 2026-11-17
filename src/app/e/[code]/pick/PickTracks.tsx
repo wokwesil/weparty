@@ -116,7 +116,7 @@ export function PickTracks({
       <Backdrop />
       <header className="flex items-center justify-between py-2">
         <Wordmark size="sm" />
-        <Link href={`/e/${code}/party`} className="py-2 text-sm text-muted hover:text-white">
+        <Link href={`/e/${code}/party`} className="tap text-sm text-muted hover:text-white">
           {firstTime ? "Look around first →" : "Back to the party →"}
         </Link>
       </header>

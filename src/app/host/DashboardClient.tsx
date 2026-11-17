@@ -19,9 +19,10 @@ export function HostHeaderActions() {
   );
 }
 
-export function NewEventForm({ orgs }: { orgs: { id: string; name: string }[] }) {
+export function NewEventForm({ orgs, requireTerms = false }: { orgs: { id: string; name: string }[]; requireTerms?: boolean }) {
   const router = useRouter();
   const [f, setF] = useState({ name: "", venueName: "", startsAt: "", description: "", orgId: orgs[0]?.id ?? "" });
+  const [terms, setTerms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
@@ -33,7 +34,7 @@ export function NewEventForm({ orgs }: { orgs: { id: string; name: string }[] })
     try {
       const { id } = await apiFetch<{ id: string }>("/api/host/events", {
         method: "POST",
-        json: { ...f, startsAt: f.startsAt ? new Date(f.startsAt).toISOString() : null },
+        json: { ...f, startsAt: f.startsAt ? new Date(f.startsAt).toISOString() : null, acceptTerms: terms },
       });
       router.push(`/host/events/${id}`);
     } catch (err) {
@@ -59,8 +60,17 @@ export function NewEventForm({ orgs }: { orgs: { id: string; name: string }[] })
           ))}
         </select>
       )}
-      {error && <p className="text-sm text-rose-300">{error}</p>}
-      <button className="btn btn-primary" disabled={busy}>{busy ? "Creating…" : "Create event + QR code"}</button>
+      {requireTerms && (
+        <label className="flex min-h-11 items-start gap-3 text-sm">
+          <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-pink" checked={terms} onChange={(e) => setTerms(e.target.checked)} required />
+          <span>
+            I agree to the{" "}
+            <a href="/terms" target="_blank" className="text-pink underline">host terms</a>, including getting the right music licenses for my venue.
+          </span>
+        </label>
+      )}
+      {error && <p className="text-sm text-rose-300" role="alert">{error}</p>}
+      <button className="btn btn-primary min-h-12" disabled={busy || (requireTerms && !terms)}>{busy ? "Creating…" : "Create event + QR code"}</button>
     </form>
   );
 }
@@ -99,11 +109,11 @@ export function TeamPanel({ orgs }: { orgs: { id: string; name: string; kind: st
           <input className="field py-2 text-sm" type="email" placeholder="Their email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <div className="flex gap-2">
             {orgs.filter((o) => o.role !== "dj").length > 1 && (
-              <select className="field py-2 text-sm" value={orgId} onChange={(e) => setOrgId(e.target.value)}>
+              <select className="field py-2 text-sm" value={orgId} onChange={(e) => setOrgId(e.target.value)} aria-label="Account to add them to">
                 {orgs.filter((o) => o.role !== "dj").map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             )}
-            <select className="field py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as "dj" | "admin")}>
+            <select className="field py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as "dj" | "admin")} aria-label="Their role">
               <option value="dj">DJ (run the queue)</option>
               <option value="admin">Admin (everything)</option>
             </select>
@@ -126,7 +136,7 @@ export function DeleteAccount() {
 
   if (!open) {
     return (
-      <button className="self-start text-xs text-muted underline-offset-4 hover:text-white hover:underline" onClick={() => setOpen(true)}>
+      <button className="tap self-start text-xs text-muted underline-offset-4 hover:text-white hover:underline" onClick={() => setOpen(true)}>
         Delete my host account
       </button>
     );

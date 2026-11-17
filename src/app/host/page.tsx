@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Backdrop, Wordmark } from "@/components/Brand";
+import { flags } from "@/lib/flags";
 import { getOrgMoney } from "@/lib/services/billing";
+import { followerCount } from "@/lib/services/growth";
 import { listHostEvents } from "@/lib/services/events";
 import { StatusPill } from "@/components/StatusPill";
 import { requireHostPage } from "./auth";
@@ -19,12 +21,13 @@ export default async function HostDashboard() {
     { guests: 0, songs: 0, votes: 0, played: 0 },
   );
   const adminOrgs = host.orgs.filter((o) => o.role !== "dj");
+  const followers = flags.growth ? await Promise.all(adminOrgs.map(async (o) => ({ ...o, count: await followerCount(o.id) }))) : [];
 
   return (
     <main className="relative mx-auto min-h-dvh max-w-5xl px-4 pb-16 pt-4 sm:px-6">
       <Backdrop />
       <header className="flex items-center gap-4 py-3">
-        <Link href="/"><Wordmark size="sm" /></Link>
+        <Link href="/" className="tap"><Wordmark size="sm" /></Link>
         <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">Host</span>
         <div className="ml-auto flex items-center gap-3 text-sm text-muted">
           <span className="hidden sm:inline">{host.displayName}</span>
@@ -44,7 +47,7 @@ export default async function HostDashboard() {
         </div>
 
         <aside className="flex flex-col gap-6">
-          {adminOrgs.length > 0 && <NewEventForm orgs={adminOrgs.map((o) => ({ id: o.id, name: o.name }))} />}
+          {adminOrgs.length > 0 && <NewEventForm orgs={adminOrgs.map((o) => ({ id: o.id, name: o.name }))} requireTerms={flags.terms} />}
           <div className="glass rounded-3xl p-5">
             <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">All-time</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -61,11 +64,32 @@ export default async function HostDashboard() {
               ))}
             </div>
           </div>
+          {followers.length > 0 && (
+            <div className="glass rounded-3xl p-5">
+              <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">Followers</h2>
+              <p className="mt-1 text-xs text-muted">Guests who asked to hear about your next party by email.</p>
+              <ul className="mt-3 flex flex-col gap-2">
+                {followers.map((o) => (
+                  <li key={o.id} className="flex items-center gap-3">
+                    <span className="font-display text-2xl font-bold">{o.count}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-muted">{followers.length > 1 ? o.name : "following you"}</span>
+                    {o.count > 0 && (
+                      <a href={`/api/host/orgs/${o.id}/followers`} className="btn btn-ghost min-h-11 px-3 py-1.5 text-xs" download>
+                        Download list
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-muted">Only email them about your parties, and always include an unsubscribe link.</p>
+            </div>
+          )}
           {money && money.orgs.length > 0 && <MoneyPanel money={money} />}
           <TeamPanel orgs={host.orgs} />
           <div className="flex flex-wrap gap-x-4 gap-y-2 px-1 text-xs text-muted">
-            <Link href="/support" className="hover:text-white">Help &amp; support</Link>
-            <Link href="/privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/support" className="tap hover:text-white">Help &amp; support</Link>
+            <Link href="/privacy" className="tap hover:text-white">Privacy</Link>
+            {flags.terms && <Link href="/terms" className="tap hover:text-white">Host terms</Link>}
           </div>
           <DeleteAccount />
         </aside>

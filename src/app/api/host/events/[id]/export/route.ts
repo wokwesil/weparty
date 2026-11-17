@@ -4,14 +4,10 @@ import { requireEventRole } from "@/lib/services/hosts";
 import { getSnapshot } from "@/lib/services/queue";
 import { api, requireHostId } from "@/lib/session";
 import type { SongView } from "@/lib/types";
+import { toCsv } from "@/lib/csv";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const csvCell = (v: unknown) => {
-  let s = v === null || v === undefined ? "" : String(v);
-  if (/^[=+\-@]/.test(s)) s = `'${s}`; // stop spreadsheet formula injection
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
 
 /**
  * Exports for DJs and other apps:
@@ -53,6 +49,5 @@ export const GET = api(async (req: Request, ctx: Ctx) => {
     s.requester ? `@${s.requester.instagram}` : "",
     s.appleSongId, s.appleUrl, s.status,
   ]);
-  const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\n") + "\n";
-  return new Response("﻿" + csv, { headers: { "Content-Type": "text/csv; charset=utf-8", ...disposition } });
+  return new Response(toCsv([header, ...rows]), { headers: { "Content-Type": "text/csv; charset=utf-8", ...disposition } });
 });

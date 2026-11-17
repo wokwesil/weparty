@@ -44,7 +44,7 @@ export function SongBrowser({
               role="tab"
               aria-selected={mode === m}
               onClick={() => setMode(m)}
-              className={`rounded-full py-2 transition ${mode === m ? "bg-white text-night" : "text-muted"}`}
+              className={`min-h-11 rounded-full py-2 transition ${mode === m ? "bg-white text-night" : "text-muted"}`}
             >
               {m === "search" ? "Search all music" : " My Apple Music"}
             </button>
@@ -241,20 +241,22 @@ export function SongList({
             <div
               className={`flex w-full items-center gap-3 rounded-2xl p-2 text-left transition ${isSel ? "bg-violet/20 ring-1 ring-violet/60" : "hover:bg-white/5"}`}
             >
-              <button
-                type="button"
-                className="relative"
-                onClick={() => preview(s)}
-                aria-label={s.previewUrl ? `Preview ${s.title}` : undefined}
-                disabled={!s.previewUrl}
-              >
-                <Artwork src={s.artworkUrl} size={52} />
-                {s.previewUrl && (
-                  <span className="absolute inset-0 grid place-items-center rounded-xl bg-black/35 text-sm text-white opacity-90">
+              {s.previewUrl ? (
+                <button
+                  type="button"
+                  className="relative shrink-0"
+                  onClick={() => preview(s)}
+                  aria-label={playing === s.appleId ? `Stop preview of ${s.title}` : `Play a preview of ${s.title}`}
+                  aria-pressed={playing === s.appleId}
+                >
+                  <Artwork src={s.artworkUrl} size={52} />
+                  <span aria-hidden className="absolute inset-0 grid place-items-center rounded-xl bg-black/35 text-sm text-white opacity-90">
                     {playing === s.appleId ? "❚❚" : "▶"}
                   </span>
-                )}
-              </button>
+                </button>
+              ) : (
+                <Artwork src={s.artworkUrl} size={52} />
+              )}
               <button type="button" className="min-w-0 flex-1 text-left" onClick={() => !locked && onToggle(s)} disabled={locked}>
                 <p className="truncate font-semibold">
                   {s.title} {s.explicit && <span className="ml-1 rounded bg-white/15 px-1 text-[10px] align-middle">E</span>}

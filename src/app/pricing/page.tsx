@@ -22,7 +22,7 @@ export default async function PricingPage() {
     <main className="relative mx-auto min-h-dvh max-w-5xl px-4 pb-16 pt-4">
       <Backdrop />
       <header className="flex items-center justify-between py-3">
-        <Link href="/"><Wordmark size="sm" /></Link>
+        <Link href="/" className="tap"><Wordmark size="sm" /></Link>
         <Link href={hostId ? "/host" : "/host/login"} className="min-h-11 py-3 text-sm text-muted hover:text-white">
           {hostId ? "Your parties →" : "Host sign in →"}
         </Link>

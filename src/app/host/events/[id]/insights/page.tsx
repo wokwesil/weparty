@@ -58,7 +58,7 @@ export default async function Insights({ params }: Props) {
     <main className="relative mx-auto min-h-dvh max-w-5xl px-4 pb-16 pt-4">
       <Backdrop />
       <header className="flex items-center gap-4 py-3">
-        <Link href="/host" className="text-sm text-muted hover:text-white">← Events</Link>
+        <Link href="/host" className="tap text-sm text-muted hover:text-white">← Events</Link>
         <Wordmark size="sm" />
       </header>
       <h1 className="mt-4 font-display text-3xl font-black">{event.name}</h1>

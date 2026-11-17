@@ -1,6 +1,7 @@
 import QRCode from "qrcode";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { flags } from "@/lib/flags";
 import { getEventById } from "@/lib/services/events";
 import { requireEventRole } from "@/lib/services/hosts";
 import { eventJoinUrl } from "@/lib/urls";
@@ -23,7 +24,7 @@ export default async function Poster({ params }: Props) {
   return (
     <main className="min-h-dvh bg-night px-4 py-6 print:bg-white print:p-0">
       <div className="no-print mx-auto mb-4 flex max-w-[8.5in] items-center justify-between">
-        <Link href={`/host/events/${id}`} className="text-sm text-muted hover:text-white">← Back to control room</Link>
+        <Link href={`/host/events/${id}`} className="tap text-sm text-muted hover:text-white">← Back to control room</Link>
         <PrintButton />
       </div>
       <article className="mx-auto flex aspect-[8.5/11] max-w-[8.5in] flex-col items-center justify-between overflow-hidden rounded-3xl bg-[#07060c] p-[6%] text-center text-white print:rounded-none" style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}>
@@ -41,7 +42,14 @@ export default async function Poster({ params }: Props) {
             No app needed. Or go to <b className="text-white">{url.replace(/^https?:\/\//, "")}</b>
           </p>
         </div>
-        <p className="text-xs tracking-[0.3em] text-[#a39fbd] uppercase">Powered by <b className="text-white">Offtrack</b></p>
+        <div className="flex flex-col items-center gap-2">
+          {flags.growth && (
+            <p className="text-sm text-[#c9c5e0]">
+              Want this at your party? Host your own at <b className="text-white">{new URL(url).host}/host</b>
+            </p>
+          )}
+          <p className="text-xs tracking-[0.3em] text-[#a39fbd] uppercase">Powered by <b className="text-white">Offtrack</b></p>
+        </div>
       </article>
     </main>
   );

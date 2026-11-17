@@ -9,6 +9,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Put page titles and descriptions in <head> for every visitor (not only known bots),
+  // so link previews and audits always see them.
+  htmlLimitedBots: /.*/,
   images: { unoptimized: true },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

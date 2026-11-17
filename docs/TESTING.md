@@ -96,3 +96,13 @@ pressing Next song. It prints timings for every kind of request.
   Nov 22 will run. `/pricing` returns "not found" while `FEATURE_PLANS` is off.
 - Checked with the switches on: pricing page, upgrade buttons and the dashboard's
   "Plan & payouts" panel render with no browser errors.
+
+## Growth + polish (PR 3)
+
+- Unit + database: 53/53 (new `tests/integration/growth.test.ts`).
+- Full party test: 51/51 with every switch off; 56/56 with `FEATURE_GROWTH`,
+  `FEATURE_TERMS`, `FEATURE_SPONSOR` and `FEATURE_PAYMENTS` on.
+- Accessibility (`npm run test:a11y`): 17 screens, no serious WCAG 2.1 AA issues,
+  no tap targets under 44px.
+- Lighthouse mobile: 92 to 94 performance, 100 accessibility, best practices and SEO
+  on home, join, replay and pricing. Details in docs/GROWTH.md.

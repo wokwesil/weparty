@@ -1,5 +1,5 @@
 "use client";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -38,7 +38,9 @@ type Panel = "queue" | "pulse" | "dj" | "guests" | "settings" | "share" | "apple
 export function ControlRoom(props: { eventId: string; code: string; joinUrl: string; initial: Details; role: string }) {
   return (
     <ToastProvider>
+      <MotionConfig reducedMotion="user">
       <Room {...props} />
+      </MotionConfig>
     </ToastProvider>
   );
 }
@@ -90,7 +92,7 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
   return (
     <main className={`mx-auto min-h-dvh max-w-6xl px-3 pb-20 pt-3 sm:px-6 ${dj ? "bg-black" : ""}`}>
       <header className="sticky top-0 z-20 -mx-3 flex flex-wrap items-center gap-3 bg-night/80 px-3 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
-        <Link href="/host" className="text-sm text-muted hover:text-white">← Events</Link>
+        <Link href="/host" className="tap text-sm text-muted hover:text-white">← Events</Link>
         <Wordmark size="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-black tracking-[0.3em] text-lime uppercase">{dj ? "DJ Booth" : "Control room"}</p>
@@ -103,8 +105,8 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
           </p>
         </div>
         <div className="flex gap-2 text-xs">
-          <Link href={`/host/events/${eventId}/check`} className="rounded-full bg-white/5 px-3 py-2 text-muted hover:text-white">✅ Party check</Link>
-          <Link href={`/host/events/${eventId}/insights`} className="rounded-full bg-white/5 px-3 py-2 text-muted hover:text-white">Insights</Link>
+          <Link href={`/host/events/${eventId}/check`} className="tap rounded-full bg-white/5 px-3 py-2 text-muted hover:text-white">✅ Party check</Link>
+          <Link href={`/host/events/${eventId}/insights`} className="tap rounded-full bg-white/5 px-3 py-2 text-muted hover:text-white">Insights</Link>
         </div>
         <div className="flex flex-wrap gap-2">
           {!ended &&
@@ -146,7 +148,7 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
             role="tab"
             aria-selected={panel === p}
             onClick={() => setPanel(p)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${panel === p ? "bg-white text-night" : "bg-white/5 text-muted hover:text-white"}`}
+            className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${panel === p ? "bg-white text-night" : "bg-white/5 text-muted hover:text-white"}`}
           >
             {label}
           </button>

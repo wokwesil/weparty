@@ -20,12 +20,12 @@ export default function Home() {
       </section>
       <footer className="flex flex-col items-center gap-4">
         <PoweredBy />
-        <Link href="/host" className="text-sm text-muted underline-offset-4 hover:text-white hover:underline">
+        <Link href="/host" className="tap text-sm text-muted underline-offset-4 hover:text-white hover:underline">
           Hosting a party? Host dashboard →
         </Link>
         <nav className="flex gap-4 text-xs text-muted">
-          <Link href="/support" className="hover:text-white">Help</Link>
-          <Link href="/privacy" className="hover:text-white">Privacy</Link>
+          <Link href="/support" className="tap hover:text-white">Help</Link>
+          <Link href="/privacy" className="tap hover:text-white">Privacy</Link>
         </nav>
       </footer>
     </main>
