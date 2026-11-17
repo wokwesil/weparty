@@ -110,7 +110,7 @@ export async function GET(req: Request, ctx: Ctx) {
               color: "transparent",
             }}
           >
-            WEPARTY
+            WE PARTY
           </div>
           <div style={{ fontSize: 30, marginTop: 6 }}>Where We All Control the Vibes · Powered by Offtrack</div>
         </div>

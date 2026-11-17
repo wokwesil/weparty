@@ -30,7 +30,7 @@ export default async function Poster({ params }: Props) {
       <article className="mx-auto flex aspect-[8.5/11] max-w-[8.5in] flex-col items-center justify-between overflow-hidden rounded-3xl bg-[#07060c] p-[6%] text-center text-white print:rounded-none" style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}>
         <div>
           <p className="font-display text-[clamp(2.5rem,9vw,5.5rem)] font-black leading-none">
-            <span className="text-gradient">WEPARTY</span>
+            <span className="text-gradient [word-spacing:0.18em]">WE PARTY</span>
           </p>
           <p className="mt-3 text-[clamp(1rem,2.6vw,1.6rem)] font-semibold">Where We All Control the Vibes.</p>
         </div>
