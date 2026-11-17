@@ -60,6 +60,9 @@ export function AuthForm({ mode, needsInvite }: { mode: "login" | "signup"; need
         {mode === "signup" && needsInvite && (
           <input className="field" placeholder="Host invite code" value={f.inviteCode} onChange={set("inviteCode")} required />
         )}
+        {mode === "login" && (
+          <Link href="/host/forgot" className="-mt-1 self-end text-sm text-pink">Forgot password?</Link>
+        )}
         {error && <p className="rounded-xl bg-rose-500/15 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p>}
         <button className="btn btn-primary mt-2 py-3.5" disabled={busy}>
           {busy ? "One sec…" : mode === "login" ? "Sign in" : "Create account"}
