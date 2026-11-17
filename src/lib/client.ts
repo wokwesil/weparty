@@ -1,5 +1,6 @@
 "use client";
 /** Small helpers for calling the WeParty server from the browser. */
+import { getDeviceId } from "./device";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) {
@@ -9,15 +10,27 @@ export class ApiError extends Error {
 
 export async function apiFetch<T = unknown>(url: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const { json, ...rest } = init;
-  const res = await fetch(url, {
-    ...rest,
-    headers: { ...(json !== undefined ? { "Content-Type": "application/json" } : {}), ...(rest.headers ?? {}) },
-    body: json !== undefined ? JSON.stringify(json) : rest.body,
-    credentials: "same-origin",
-    cache: "no-store",
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...rest,
+      headers: {
+        ...(json !== undefined ? { "Content-Type": "application/json" } : {}),
+        "x-wp-device": getDeviceId(),
+        ...(rest.headers ?? {}),
+      },
+      body: json !== undefined ? JSON.stringify(json) : rest.body,
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError(0, "No connection. Check your Wi-Fi or signal and try again.", "offline");
+  }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(res.status, data.error ?? "Something went wrong.", data.code);
+  if (!res.ok) {
+    const fallback = res.status >= 500 ? "The party server hiccuped. Try again in a moment." : "Something went wrong.";
+    throw new ApiError(res.status, data.error ?? fallback, data.code);
+  }
   return data as T;
 }
 

@@ -6,6 +6,7 @@ import { notifyEventChanged } from "../realtime";
 import { randomEventCode } from "../security";
 import type { EventPublic } from "../types";
 import { requireEventRole, requireOrgRole } from "./hosts";
+import { refillLock } from "./queue";
 
 export type EventRow = {
   id: string;
@@ -21,6 +22,8 @@ export type EventRow = {
   replay_apple_playlist_url: string | null;
   live_apple_playlist_id: string | null;
   play_counter: number;
+  version: number | string;
+  dj_photo_version: number;
   created_at: Date;
   ended_at: Date | null;
 };
@@ -39,6 +42,17 @@ export function toPublicEvent(e: EventRow): EventPublic {
     minPicks: s.minPicks,
     maxPicks: s.maxPicks,
     replayAppleUrl: e.replay_apple_playlist_url,
+    djMode: s.djMode,
+    approvalMode: s.djMode && s.approvalMode,
+    lockCount: s.djMode ? s.lockCount : 0,
+    dj:
+      s.djMode && s.djName
+        ? {
+            name: s.djName,
+            instagram: s.djInstagram || null,
+            photoUrl: e.dj_photo_version > 0 ? `/api/e/${e.code}/dj-photo?v=${e.dj_photo_version}` : null,
+          }
+        : null,
   };
 }
 
@@ -126,13 +140,36 @@ export async function setLivePlaylistId(hostId: string, eventId: string, playlis
 
 export async function updateSettings(hostId: string, eventId: string, patch: Partial<PartySettings>) {
   await requireEventRole(hostId, eventId, "dj");
-  const [e] = await sql<{ settings: unknown }[]>`select settings from events where id = ${eventId}`;
-  const next = normalizeSettings({ ...normalizeSettings(e.settings), ...patch });
-  await sql`update events set settings = ${sql.json(next)} where id = ${eventId}`;
+  const next = await sql.begin(async (tx) => {
+    const [e] = await tx<EventRow[]>`select * from events where id = ${eventId} for update`;
+    const prev = normalizeSettings(e.settings);
+    const merged = normalizeSettings({ ...prev, ...patch });
+    await tx`update events set settings = ${sql.json(merged)} where id = ${eventId}`;
+    const updated = { ...e, settings: merged };
+    // Explicit filter switched on: take explicit songs that haven't played out of the queue.
+    if (prev.allowExplicit && !merged.allowExplicit) {
+      await tx`update queue_items set status = 'removed', pinned_rank = null
+               where event_id = ${eventId} and explicit and status in ('queued','pending')`;
+    }
+    // Approval mode switched off: everything waiting goes straight into the queue.
+    if (effectiveApproval(prev) && !effectiveApproval(merged)) {
+      await tx`update queue_items set status = 'queued', decided_at = now() where event_id = ${eventId} and status = 'pending'`;
+    }
+    // Lock switched off: the crowd decides again.
+    if (effectiveLock(prev) > 0 && effectiveLock(merged) === 0) {
+      await tx`update queue_items set pinned_rank = null where event_id = ${eventId} and status = 'queued'`;
+    }
+    await refillLock(tx, updated);
+    return merged;
+  });
   await logEvent(eventId, `host:${hostId}`, "settings_changed", next);
   await notifyEventChanged(eventId);
   return next;
 }
+
+/** Approval mode and song locks are DJ Mode features. */
+export const effectiveApproval = (s: PartySettings) => s.djMode && s.approvalMode;
+export const effectiveLock = (s: PartySettings) => (s.djMode ? s.lockCount : 0);
 
 export async function setSubmissionsOpen(hostId: string, eventId: string, open: boolean) {
   await requireEventRole(hostId, eventId, "dj");

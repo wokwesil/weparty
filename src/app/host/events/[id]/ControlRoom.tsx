@@ -15,6 +15,7 @@ import { apiFetch, formatDuration } from "@/lib/client";
 import type { PartySettings } from "@/lib/ranking";
 import type { QueueSnapshot, Song, SongView } from "@/lib/types";
 import { useLiveData } from "@/lib/useLive";
+import { CrowdPulse, DjBooth, DjModePanel, type Block } from "./DjBooth";
 import { OfftrackPanel } from "./OfftrackPanel";
 
 type HostState = {
@@ -25,10 +26,13 @@ type HostState = {
   log: { id: number; actor: string; action: string; details: Record<string, unknown>; created_at: string }[];
   hidden: { id: string; title: string; artist: string; status: string }[];
   liveApplePlaylistId: string | null;
+  blocks: Block[];
+  reports: { id: number; guestId: string; reason: string; createdAt: string }[];
+  djPhotoUrl: string | null;
 };
 
 type Details = { name: string; venueName: string; description: string; startsAt: string; replayAppleUrl: string };
-type Panel = "queue" | "guests" | "settings" | "share" | "apple";
+type Panel = "queue" | "pulse" | "dj" | "guests" | "settings" | "share" | "apple";
 
 export function ControlRoom(props: { eventId: string; code: string; joinUrl: string; initial: Details; role: string }) {
   return (
@@ -44,7 +48,7 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
   const [panel, setPanel] = useState<Panel>("queue");
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
-  const { data, refresh, connected } = useLiveData<HostState>(`/api/host/events/${eventId}/state`, eventId, {
+  const { data, refresh, connected, status: live } = useLiveData<HostState>(`/api/host/events/${eventId}/state`, eventId, {
     onUnauthorized: () => router.replace("/host/login"),
   });
 
@@ -77,22 +81,29 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
     }
   };
 
-  if (!data) return <main className="grid min-h-dvh place-items-center text-muted">Loading control room…</main>;
+  if (!data) return <main className="grid min-h-dvh place-items-center text-muted">Loading…</main>;
   const { snapshot: s } = data;
   const ended = s.event.status === "ended";
+  const dj = data.settings.djMode;
 
   return (
-    <main className="mx-auto min-h-dvh max-w-6xl px-3 pb-20 pt-3 sm:px-6">
+    <main className={`mx-auto min-h-dvh max-w-6xl px-3 pb-20 pt-3 sm:px-6 ${dj ? "bg-black" : ""}`}>
       <header className="sticky top-0 z-20 -mx-3 flex flex-wrap items-center gap-3 bg-night/80 px-3 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <Link href="/host" className="text-sm text-muted hover:text-white">← Events</Link>
         <Wordmark size="sm" />
         <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-black tracking-[0.3em] text-lime uppercase">{dj ? "DJ Booth" : "Control room"}</p>
           <p className="truncate font-bold">{s.event.name}</p>
           <p className="flex items-center gap-2 text-xs text-muted">
             <StatusPill status={s.event.status} open={s.event.submissionsOpen} />
             <span className={`h-1.5 w-1.5 rounded-full ${connected ? "bg-lime" : "bg-amber-400"}`} title={connected ? "Live updates connected" : "Checking every few seconds"} />
-            {s.stats.guests} guests · {s.queue.length} queued · {s.stats.votes} hearts
+            {s.stats.guests} guests · {s.queue.length} queued{s.stats.pending ? ` · ${s.stats.pending} pending` : ""} · {s.stats.votes} hearts
+            {live === "offline" && <span className="text-rose-300">· reconnecting…</span>}
           </p>
+        </div>
+        <div className="flex gap-2 text-xs">
+          <Link href={`/host/events/${eventId}/check`} className="rounded-full bg-white/5 px-3 py-2 text-muted hover:text-white">✅ Party check</Link>
+          <Link href={`/host/events/${eventId}/insights`} className="rounded-full bg-white/5 px-3 py-2 text-muted hover:text-white">Insights</Link>
         </div>
         <div className="flex flex-wrap gap-2">
           {!ended &&
@@ -118,13 +129,17 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
       )}
 
       <nav className="no-scrollbar my-4 flex gap-1 overflow-x-auto" role="tablist">
-        {([
-          ["queue", "Live queue"],
-          ["guests", `Guests (${data.people.length})`],
-          ["settings", "Party shuffle settings"],
-          ["share", "QR, details & export"],
-          ["apple", "Apple Music & Offtrack"],
-        ] as [Panel, string][]).map(([p, label]) => (
+        {(
+          [
+            ["queue", dj ? `Booth${s.stats.pending ? ` (${s.stats.pending})` : ""}` : "Live queue"],
+            ...(dj ? [["pulse", "Crowd Pulse"]] : []),
+            ["dj", dj ? "DJ settings" : "DJ Mode"],
+            ["guests", `Guests (${data.people.length})${data.reports.length ? ` · ⚠ ${new Set(data.reports.map((r) => r.guestId)).size}` : ""}`],
+            ["settings", "Party shuffle settings"],
+            ["share", "QR, details & export"],
+            ["apple", "Apple Music & Offtrack"],
+          ] as [Panel, string][]
+        ).map(([p, label]) => (
           <button
             key={p}
             role="tab"
@@ -137,7 +152,16 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
         ))}
       </nav>
 
-      {panel === "queue" && (
+      {panel === "queue" && dj && (
+        <DjBooth eventId={eventId} s={s} settings={data.settings} busy={busy} act={act} onStatus={(a) => status(a)} />
+      )}
+      {panel === "pulse" && dj && (
+        <CrowdPulse eventId={eventId} version={`${s.stats.votes}:${s.stats.songs}:${s.stats.pending}`} act={act} />
+      )}
+      {panel === "dj" && (
+        <DjModePanel eventId={eventId} settings={data.settings} blocks={data.blocks} djPhotoUrl={data.djPhotoUrl} onSaved={refresh} />
+      )}
+      {panel === "queue" && !dj && (
         <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
           <div className="flex flex-col gap-4">
             <NowPlayingHost s={s} busy={busy} ended={ended} act={act} />
@@ -213,7 +237,7 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
         </div>
       )}
 
-      {panel === "guests" && <GuestsPanel eventId={eventId} people={data.people} onChanged={refresh} />}
+      {panel === "guests" && <GuestsPanel eventId={eventId} people={data.people} reports={data.reports} onChanged={refresh} />}
       {panel === "settings" && <SettingsPanel eventId={eventId} settings={data.settings} onSaved={refresh} />}
       {panel === "share" && <SharePanel eventId={eventId} code={code} joinUrl={joinUrl} initial={initial} />}
       {panel === "apple" && (
@@ -387,10 +411,14 @@ function HostAdd({ eventId, existing, onAdded }: { eventId: string; existing: st
   );
 }
 
-function GuestsPanel({ eventId, people, onChanged }: { eventId: string; people: HostState["people"]; onChanged: () => void }) {
+function GuestsPanel({ eventId, people, reports, onChanged }: { eventId: string; people: HostState["people"]; reports: HostState["reports"]; onChanged: () => void }) {
   const toast = useToast();
   const [q, setQ] = useState("");
-  const list = people.filter((p) => !q || `${p.displayName} ${p.instagram}`.toLowerCase().includes(q.toLowerCase().replace(/^@/, "")));
+  const reported = new Map<string, string[]>();
+  for (const r of reports) reported.set(r.guestId, [...(reported.get(r.guestId) ?? []), r.reason]);
+  const list = people
+    .filter((p) => !q || `${p.displayName} ${p.instagram}`.toLowerCase().includes(q.toLowerCase().replace(/^@/, "")))
+    .sort((a, b) => (reported.get(b.id)?.length ?? 0) - (reported.get(a.id)?.length ?? 0));
   const remove = async (id: string, ig: string) => {
     try {
       await apiFetch(`/api/host/events/${eventId}/guests/${id}`, { method: "DELETE" });
@@ -418,7 +446,14 @@ function GuestsPanel({ eventId, people, onChanged }: { eventId: string; people: 
           <tbody>
             {list.map((p) => (
               <tr key={p.id} className="border-t border-line">
-                <td className="p-3"><span className="flex items-center gap-2"><Avatar person={p} size={32} />{p.displayName}</span></td>
+                <td className="p-3">
+                  <span className="flex items-center gap-2"><Avatar person={p} size={32} />{p.displayName}</span>
+                  {reported.has(p.id) && (
+                    <span className="mt-1 block text-xs text-rose-300" title={reported.get(p.id)!.join("\n")}>
+                      ⚠ Reported {reported.get(p.id)!.length}×: {reported.get(p.id)![0]}
+                    </span>
+                  )}
+                </td>
                 <td className="p-3"><InstagramLink username={p.instagram} /></td>
                 <td className="p-3">{p.songs.length}</td>
                 <td className="p-3">{p.heartsReceived}</td>
@@ -477,7 +512,7 @@ function SettingsPanel({ eventId, settings, onSaved }: { eventId: string; settin
       </div>
       <div className="glass flex flex-col gap-5 rounded-3xl p-5">
         <h2 className="font-display text-lg font-bold">Guest rules</h2>
-        {num("minPicks", "Minimum songs to join the queue", "Guests pick at least this many on their first go.", 1, 10)}
+        {num("minPicks", "Songs needed to join", "Guests pick at least this many on their first go. 1 is fastest.", 1, 10)}
         {num("maxPicks", "Maximum songs per guest", "Total songs one guest can add.", 1, 25)}
         {bool("allowExplicit", "Allow explicit songs", "Turn off for a clean party.")}
         {bool("replayShowPeople", "Show guests on the public replay page", "Names and Instagram handles next to songs on the shareable replay.")}

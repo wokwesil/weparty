@@ -46,7 +46,7 @@ export function SongCard({
     >
       {showPosition && (
         <span className="w-6 shrink-0 text-center font-display text-sm font-bold text-muted tabular-nums">
-          {song.pinned ? "📌" : song.position}
+          {song.locked ? <span aria-label={`Locked by the DJ at number ${song.position}`}>🔒</span> : song.pinned ? "📌" : song.position}
         </span>
       )}
       <Artwork src={song.artworkUrl} size={56} />

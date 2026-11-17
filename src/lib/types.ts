@@ -11,6 +11,8 @@ export type Song = {
   appleUrl: string | null;
   previewUrl: string | null;
   explicit: boolean;
+  /** Main genre, when Apple tells us (used by the DJ's Crowd Pulse). */
+  genre?: string | null;
 };
 
 export type PersonRef = {
@@ -31,7 +33,10 @@ export type SongView = {
   previewUrl: string | null;
   durationMs: number | null;
   explicit: boolean;
-  status: "queued" | "playing" | "played" | "skipped" | "removed";
+  status: "pending" | "queued" | "playing" | "played" | "skipped" | "removed" | "declined";
+  genre: string | null;
+  /** True for the next songs the DJ has locked in place (hearts can't move them). */
+  locked: boolean;
   votes: number;
   requests: number;
   position: number | null;
@@ -57,7 +62,14 @@ export type EventPublic = {
   minPicks: number;
   maxPicks: number;
   replayAppleUrl: string | null;
+  djMode: boolean;
+  approvalMode: boolean;
+  lockCount: number;
+  /** DJ Spotlight, shown when DJ Mode is on and a DJ name is set. */
+  dj: { name: string; instagram: string | null; photoUrl: string | null } | null;
 };
+
+export type Shoutout = { id: number; message: string; createdAt: string };
 
 export type QueueSnapshot = {
   event: EventPublic;
@@ -65,7 +77,11 @@ export type QueueSnapshot = {
   queue: SongView[];
   history: SongView[];
   popular: SongView[];
-  stats: { guests: number; songs: number; votes: number; played: number };
+  /** Songs waiting for DJ approval (only sent to the host; guests see their own in "me"). */
+  pending: SongView[];
+  /** Latest DJ shoutout from the last 15 minutes, if any. */
+  shoutout: Shoutout | null;
+  stats: { guests: number; songs: number; votes: number; played: number; pending: number };
   generatedAt: string;
 };
 
@@ -73,6 +89,8 @@ export type GuestMe = PersonRef & {
   songsSubmitted: number;
   votedIds: string[];
   mySongIds: string[];
+  /** My requests waiting for the DJ, and ones the DJ declined. */
+  myPending: { id: string; title: string; artist: string; artworkUrl: string | null; status: "pending" | "declined" }[];
 };
 
 export type MusicCapabilities = {

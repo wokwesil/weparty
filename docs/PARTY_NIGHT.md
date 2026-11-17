@@ -1,9 +1,11 @@
+**See [NOV22_RUNBOOK.md](../NOV22_RUNBOOK.md) for the full night-of checklist, including DJ Mode.**
+
 # Running the November 22 party
 
 ## Before guests arrive
 1. Open the control room for the event on your phone and stay signed in.
 2. Tape up the printed QR posters (entrance, bar, DJ booth).
-3. Scan one yourself and add 5 songs to warm up the queue.
+3. Scan one yourself and add a few songs to warm up the queue.
 4. Decide your rules in **Party shuffle settings** (e.g. max songs, clean only).
 
 ## During the party

@@ -3,6 +3,7 @@ import { normalizeSettings } from "@/lib/ranking";
 import { getEventById } from "@/lib/services/events";
 import { listPeople } from "@/lib/services/guests";
 import { requireEventRole } from "@/lib/services/hosts";
+import { listBlocks, listReports } from "@/lib/services/dj";
 import { getEventLog, getSnapshot } from "@/lib/services/queue";
 import { sql } from "@/lib/db";
 import { api, requireHostId } from "@/lib/session";
@@ -17,12 +18,15 @@ export const GET = api(async (_req: Request, ctx: Ctx) => {
   const role = await requireEventRole(hostId, id);
   const event = await getEventById(id);
   if (!event) throw notFound();
-  const [snapshot, people, log, hidden] = await Promise.all([
+  const [snapshot, people, log, hidden, blocks, reports, djPhoto] = await Promise.all([
     getSnapshot(event),
     listPeople(id),
     getEventLog(hostId, id, 40),
-    sql`select id, title, artist, status from queue_items where event_id = ${id} and status in ('skipped','removed')
-        order by coalesce(finished_at, created_at) desc limit 50`,
+    sql`select id, title, artist, status from queue_items where event_id = ${id} and status in ('skipped','removed','declined')
+        order by coalesce(decided_at, finished_at, created_at) desc limit 50`,
+    listBlocks(id),
+    listReports(id),
+    Promise.resolve(event.dj_photo_version > 0 ? `/api/e/${event.code}/dj-photo?v=${event.dj_photo_version}` : null),
   ]);
   return {
     role,
@@ -32,5 +36,8 @@ export const GET = api(async (_req: Request, ctx: Ctx) => {
     log,
     hidden,
     liveApplePlaylistId: event.live_apple_playlist_id,
+    blocks,
+    reports,
+    djPhotoUrl: djPhoto,
   };
 });

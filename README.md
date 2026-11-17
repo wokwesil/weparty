@@ -4,7 +4,7 @@
 Powered by Offtrack.
 
 WeParty is a web app for parties. Guests scan a QR code, add their Instagram,
-pick 5 to 10 songs, and heart each other's picks. The crowd's hearts plus a
+pick a song or a few (1 to 10), and heart each other's picks. The crowd's hearts plus a
 fairness rule decide the order. The host runs everything from a control room on
 their phone or laptop. When the night ends, everyone gets **YOUR WEPARTY REPLAY**:
 a shareable playlist page of the songs that actually played.
@@ -36,7 +36,7 @@ installed to the home screen, and ships as iPhone and Android apps
 - [Architecture, database and ranking algorithm](docs/ARCHITECTURE.md)
 - [Apple Music](docs/APPLE_MUSIC.md) · [Instagram](docs/INSTAGRAM.md) · [Offtrack](docs/OFFTRACK.md)
 - [Testing](docs/TESTING.md)
-- [Running the Nov 22 party](docs/PARTY_NIGHT.md)
+- [Nov 22 runbook (night-of checklist)](NOV22_RUNBOOK.md) · [Running a party](docs/PARTY_NIGHT.md)
 - [Installable website + App Store / Google Play apps](APP_SETUP.md) · [Store listing text](STORE_LISTING.md)
 
 ## Quick start for developers

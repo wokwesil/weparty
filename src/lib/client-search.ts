@@ -13,6 +13,7 @@ type ItunesTrack = {
   trackViewUrl?: string;
   previewUrl?: string;
   trackExplicitness?: string;
+  primaryGenreName?: string;
 };
 
 /** Last resort if the WeParty server is being rate-limited by Apple: ask Apple's public search from the phone itself. */
@@ -42,6 +43,7 @@ function itunesJsonp(term: string): Promise<Song[]> {
           appleUrl: t.trackViewUrl?.replace(/[?&]uo=\d+/, "") ?? null,
           previewUrl: t.previewUrl ?? null,
           explicit: t.trackExplicitness === "explicit",
+          genre: t.primaryGenreName ?? null,
         }));
       cleanup(undefined, songs);
     };

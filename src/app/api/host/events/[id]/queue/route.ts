@@ -3,7 +3,9 @@ import { hostQueueAction, type HostAction } from "@/lib/services/queue";
 import { api, assertSameOrigin, readJson, requireHostId } from "@/lib/session";
 
 type Ctx = { params: Promise<{ id: string }> };
-const TYPES = new Set(["next", "play_now", "finish_current", "skip", "remove", "restore", "move", "unpin", "unpin_all"]);
+const TYPES = new Set([
+  "next", "play_now", "finish_current", "skip", "remove", "restore", "move", "unpin", "unpin_all", "approve", "decline", "approve_all",
+]);
 
 export const POST = api(async (req: Request, ctx: Ctx) => {
   assertSameOrigin(req);

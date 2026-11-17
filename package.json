@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "node tests/e2e/party-flow.mjs",
+    "test:load": "node tests/load/party-load.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "app:icons": "node scripts/make-app-icons.mjs",
     "app:assets": "npx -y @capacitor/assets@4.0.0 generate --ios --android --iconBackgroundColor \"#07060c\" --iconBackgroundColorDark \"#07060c\" --splashBackgroundColor \"#07060c\" --splashBackgroundColorDark \"#07060c\"",

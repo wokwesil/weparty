@@ -12,7 +12,7 @@ export default async function PartyPage({ params }: Props) {
   const event = await getEventByCode((await params).code);
   if (!event) notFound();
   const guest = await currentGuest(event);
-  if (!guest) redirect(event.status === "ended" ? `/e/${event.code}/replay` : `/e/${event.code}/join`);
+  if (!guest) redirect(event.status === "ended" ? `/e/${event.code}/replay` : `/e/${event.code}`);
   return (
     <Suspense>
       <PartyRoom code={event.code} eventId={event.id} />

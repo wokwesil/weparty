@@ -1,4 +1,5 @@
 import "server-only";
+import { sql } from "../db";
 import { appleMusicConfigured, env } from "../env";
 import type { Song } from "../types";
 import { appleCatalogSearch } from "./apple";
@@ -27,6 +28,14 @@ export async function searchSongs(termRaw: string): Promise<{ songs: Song[]; sou
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return { songs: hit.songs, source: searchSource() };
 
+  // Shared cache in the database: when one guest searches "Beyonce", the next
+  // 149 guests get the answer without asking Apple again.
+  const shared = await readSharedCache(key);
+  if (shared) {
+    cache.set(key, { at: Date.now(), songs: shared });
+    return { songs: shared, source: searchSource() };
+  }
+
   let songs: Song[];
   let source = searchSource();
   if (source === "test-catalog") {
@@ -44,7 +53,32 @@ export async function searchSongs(termRaw: string): Promise<{ songs: Song[]; sou
   }
   cache.set(key, { at: Date.now(), songs });
   if (cache.size > 2000) cache.delete(cache.keys().next().value!);
+  if (source !== "test-catalog") await writeSharedCache(key, songs);
   return { songs, source };
+}
+
+const SHARED_CACHE_HOURS = 12;
+
+async function readSharedCache(key: string): Promise<Song[] | null> {
+  if (env.testMusicCatalog) return null;
+  try {
+    const [row] = await sql<{ songs: Song[] }[]>`
+      select songs from search_cache where key = ${key}
+      and created_at > now() - make_interval(hours => ${SHARED_CACHE_HOURS})`;
+    return row?.songs ?? null;
+  } catch {
+    return null; // the cache is a nice-to-have
+  }
+}
+
+async function writeSharedCache(key: string, songs: Song[]) {
+  try {
+    await sql`insert into search_cache (key, songs) values (${key}, ${sql.json(songs as never)})
+              on conflict (key) do update set songs = excluded.songs, created_at = now()`;
+    if (Math.random() < 0.01) await sql`delete from search_cache where created_at < now() - interval '3 days'`;
+  } catch {
+    /* ignore */
+  }
 }
 
 type ItunesTrack = {
@@ -58,6 +92,7 @@ type ItunesTrack = {
   trackViewUrl?: string;
   previewUrl?: string;
   trackExplicitness?: string;
+  primaryGenreName?: string;
 };
 
 export function fromItunes(t: ItunesTrack): Song | null {
@@ -73,6 +108,7 @@ export function fromItunes(t: ItunesTrack): Song | null {
     appleUrl: t.trackViewUrl ? t.trackViewUrl.replace(/[?&]uo=\d+/, "") : null,
     previewUrl: t.previewUrl ?? null,
     explicit: t.trackExplicitness === "explicit",
+    genre: t.primaryGenreName ?? null,
   };
 }
 
@@ -105,6 +141,7 @@ const TEST_SONGS: Song[] = Array.from({ length: 60 }, (_, i) => ({
   appleUrl: null,
   previewUrl: null,
   explicit: i % 9 === 0,
+  genre: ["Hip-Hop/Rap", "Pop", "Dance", "R&B/Soul", "Latin", "Afrobeats"][i % 6],
 }));
 
 function testCatalogSearch(term: string) {

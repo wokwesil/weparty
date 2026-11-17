@@ -114,7 +114,7 @@ function SearchPane(props: Parameters<typeof SongBrowser>[0]) {
       {!loading && q.trim().length >= 2 && songs.length === 0 && !error && (
         <p className="text-center text-sm text-muted">No songs found. Try another search.</p>
       )}
-      <SongList songs={songs} {...props} />
+      <SongList songs={songs} {...props} label="Search results" />
     </div>
   );
 }
@@ -213,7 +213,8 @@ export function SongList({
   onToggle,
   lockedIds = [],
   lockedLabel = "Added",
-}: Parameters<typeof SongBrowser>[0] & { songs: Song[] }) {
+  label,
+}: Parameters<typeof SongBrowser>[0] & { songs: Song[]; label?: string }) {
   const [playing, setPlaying] = useState<string | null>(null);
   useEffect(() => () => audio?.pause(), []);
   const preview = (s: Song) => {
@@ -231,7 +232,7 @@ export function SongList({
     setPlaying(s.appleId);
   };
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className="flex flex-col gap-1" aria-label={label}>
       {songs.map((s) => {
         const isSel = selected.has(s.appleId);
         const locked = lockedIds.includes(s.appleId);
@@ -267,7 +268,7 @@ export function SongList({
                 type="button"
                 onClick={() => !locked && onToggle(s)}
                 disabled={locked}
-                className={`grid h-9 min-w-9 place-items-center rounded-full px-2 text-sm font-bold transition ${
+                className={`grid h-11 min-w-11 place-items-center rounded-full px-2 text-sm font-bold transition ${
                   locked ? "text-xs text-muted" : isSel ? "bg-brand text-white" : "border border-line text-white/80"
                 }`}
                 aria-label={isSel ? `Remove ${s.title}` : `Add ${s.title}`}

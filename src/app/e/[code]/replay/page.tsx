@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Artwork } from "@/components/Artwork";
 import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Backdrop, PoweredBy, Wordmark } from "@/components/Brand";
+import { DjSpotlight } from "@/components/DjSpotlight";
 import { Requester } from "@/components/SongCard";
 import { normalizeSettings } from "@/lib/ranking";
 import { getEventByCode } from "@/lib/services/events";
@@ -69,6 +70,11 @@ export default async function ReplayPage({ params }: Props) {
         <p className="mt-6 text-xs font-bold tracking-[0.35em] text-pink uppercase">{live ? "Replay so far" : "Your WeParty Replay"}</p>
         <h1 className="mt-2 font-display text-3xl font-black leading-tight sm:text-4xl">{event.name}</h1>
         <p className="mt-2 text-muted">{[event.venue_name, date].filter(Boolean).join(" · ")}</p>
+        {replay.event.dj && (
+          <div className="mt-4 w-full max-w-xs">
+            <DjSpotlight dj={replay.event.dj} label={live ? "is spinning" : "was on the decks"} />
+          </div>
+        )}
         <div className="mt-5 grid w-full max-w-md grid-cols-4 gap-2 text-center">
           {[
             [replay.stats.played, "songs played"],

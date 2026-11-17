@@ -6,13 +6,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Artwork } from "@/components/Artwork";
 import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Backdrop, Equalizer, Wordmark } from "@/components/Brand";
+import { DjSpotlight } from "@/components/DjSpotlight";
 import { NowPlaying, SongCard } from "@/components/SongCard";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { apiFetch, resizeImage } from "@/lib/client";
 import { hapticTap, shareLink } from "@/lib/native";
 import { supportMailto } from "@/lib/site";
 import type { GuestMe, QueueSnapshot, SongView } from "@/lib/types";
-import { useLiveData } from "@/lib/useLive";
+import { useLiveData, type LiveStatus } from "@/lib/useLive";
 
 type State = QueueSnapshot & { me: GuestMe | null };
 type Person = {
@@ -39,19 +40,25 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
   const search = useSearchParams();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("queue");
-  const { data, setData, refresh, connected } = useLiveData<State>(`/api/e/${code}/state`, eventId, {
-    onUnauthorized: () => router.replace(`/e/${code}/join`),
+  const { data, setData, refresh, status, error } = useLiveData<State>(`/api/e/${code}/state`, eventId, {
+    onUnauthorized: () => router.replace(`/e/${code}`),
   });
 
   const added = search.get("added");
+  const pendingAdded = Number(search.get("pending") ?? 0);
   const shown = useRef(false);
   useEffect(() => {
     if (added && !shown.current) {
       shown.current = true;
-      toast(`🎉 ${added} song${added === "1" ? "" : "s"} added to the party!`, "success");
+      toast(
+        pendingAdded > 0
+          ? `🎧 Sent to the DJ! ${pendingAdded === 1 ? "Your song is" : "Your songs are"} waiting for approval.`
+          : `🎉 You're in! ${added} song${added === "1" ? "" : "s"} added to the party.`,
+        "success",
+      );
       router.replace(`/e/${code}/party`);
     }
-  }, [added, code, router, toast]);
+  }, [added, pendingAdded, code, router, toast]);
 
   const voted = useMemo(() => new Set(data?.me?.votedIds ?? []), [data?.me?.votedIds]);
   const mine = useMemo(() => new Set(data?.me?.mySongIds ?? []), [data?.me?.mySongIds]);
@@ -87,9 +94,19 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
 
   if (!data) {
     return (
-      <main className="grid min-h-dvh place-items-center">
+      <main className="grid min-h-dvh place-items-center px-6 text-center">
         <Backdrop />
-        <Equalizer className="h-10" bars={6} />
+        <div className="flex flex-col items-center gap-4">
+          <Equalizer className="h-10" bars={6} />
+          {error ? (
+            <>
+              <p className="text-muted">{status === "offline" ? "No connection yet. We'll keep trying." : error}</p>
+              <button className="btn btn-ghost" onClick={refresh}>Try again</button>
+            </>
+          ) : (
+            <p className="text-sm text-muted">Loading the party…</p>
+          )}
+        </div>
       </main>
     );
   }
@@ -105,7 +122,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-right text-sm font-semibold">{data.event.name}</p>
           <p className="flex items-center justify-end gap-1.5 text-[11px] text-muted">
-            <span className={`h-1.5 w-1.5 rounded-full ${connected ? "bg-lime" : "bg-amber-400"}`} />
+            <LiveDot status={status} />
             {data.stats.guests} here · {data.stats.votes} hearts
           </p>
         </div>
@@ -116,6 +133,17 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
         )}
       </header>
 
+      {status === "offline" && (
+        <p className="mb-3 rounded-2xl bg-white/5 px-4 py-2 text-center text-xs text-muted" role="status">
+          Reconnecting… the queue below may be a few seconds behind.
+        </p>
+      )}
+      {data.event.dj && !ended && (
+        <div className="mb-3">
+          <DjSpotlight dj={data.event.dj} />
+        </div>
+      )}
+      <ShoutoutBanner shoutout={data.shoutout} />
       {ended && (
         <Link href={`/e/${code}/replay`} className="mb-4 block rounded-2xl bg-brand p-4 text-center font-bold">
           🎧 The party&apos;s over. Get YOUR WEPARTY REPLAY →
@@ -178,6 +206,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
             )}
             <p className="mt-4 text-center text-xs text-muted">
               ❤️ Heart songs to move them up. Everyone gets a fair turn, so one person can&apos;t take over the queue.
+              {data.event.lockCount > 0 && ` 🔒 The DJ has locked the next ${data.event.lockCount === 1 ? "song" : `${data.event.lockCount} songs`}.`}
             </p>
           </section>
           {data.history.length > 0 && (
@@ -223,16 +252,94 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
 
       {tab === "people" && <People code={code} eventId={eventId} meId={data.me?.id ?? null} />}
 
+      {tab === "queue" && data.me && data.me.myPending.some((p) => p.status === "pending") && (
+        <p className="mt-4 text-center text-xs text-muted">
+          🎧 {data.me.myPending.filter((p) => p.status === "pending").length} of your songs are waiting for the DJ. See My requests.
+        </p>
+      )}
+
       {tab === "me" && data.me && <MyRequests code={code} data={data} onChanged={refresh} />}
 
-      {!ended && data.event.submissionsOpen && (data.me?.songsSubmitted ?? 0) < data.event.maxPicks && (
+      {!ended && data.me && (
         <div className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <Link href={`/e/${code}/pick`} className="btn btn-primary shadow-2xl">
-            ＋ {data.me?.songsSubmitted ? `Add more songs (${data.event.maxPicks - data.me.songsSubmitted} left)` : "Pick your party tracks"}
-          </Link>
+          {!data.event.submissionsOpen ? (
+            <span className="glass rounded-full px-4 py-3 text-sm text-amber-100">⏸ Requests paused · keep hearting</span>
+          ) : data.me.songsSubmitted >= data.event.maxPicks ? (
+            <span className="glass rounded-full px-4 py-3 text-sm text-muted">You&apos;ve added all {data.event.maxPicks} songs · keep hearting</span>
+          ) : (
+            // A plain link (full page load) so the song picker always shows your latest picks.
+            <a href={`/e/${code}/pick`} className="btn btn-primary min-h-12 shadow-2xl">
+              ＋ {data.me.songsSubmitted ? `Add more songs (${data.event.maxPicks - data.me.songsSubmitted} left)` : "Pick a song to join the queue"}
+            </a>
+          )}
         </div>
       )}
     </main>
+  );
+}
+
+function LiveDot({ status }: { status: LiveStatus }) {
+  const label = status === "live" ? "Live" : status === "polling" ? "Updating every few seconds" : "Reconnecting";
+  return (
+    <span
+      className={`h-1.5 w-1.5 rounded-full ${status === "live" ? "bg-lime" : status === "polling" ? "bg-amber-400" : "animate-pulse bg-rose-400"}`}
+      title={label}
+      aria-label={label}
+      role="img"
+    />
+  );
+}
+
+/** A DJ shoutout pops up at the top of every guest's screen. Guests can dismiss it. */
+function ShoutoutBanner({ shoutout }: { shoutout: State["shoutout"] }) {
+  const [dismissed, setDismissed] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      setDismissed(Number(sessionStorage.getItem("wp_shout_dismissed")) || null);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const seen = useRef<number | null>(null);
+  useEffect(() => {
+    if (shoutout && seen.current !== shoutout.id) {
+      seen.current = shoutout.id;
+      hapticTap(true);
+    }
+  }, [shoutout]);
+  return (
+    <AnimatePresence>
+      {shoutout && dismissed !== shoutout.id && (
+        <motion.div
+          key={shoutout.id}
+          initial={{ opacity: 0, y: -12, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8 }}
+          className="mb-4 flex items-start gap-3 rounded-2xl bg-gradient-to-r from-cyan/25 via-violet/25 to-pink/25 p-4 ring-1 ring-cyan/40"
+          role="alert"
+        >
+          <span className="text-2xl" aria-hidden>📣</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold tracking-[0.3em] text-cyan uppercase">From the DJ</p>
+            <p className="mt-0.5 text-base font-semibold leading-snug">{shoutout.message}</p>
+          </div>
+          <button
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted hover:text-white"
+            aria-label="Dismiss message"
+            onClick={() => {
+              setDismissed(shoutout.id);
+              try {
+                sessionStorage.setItem("wp_shout_dismissed", String(shoutout.id));
+              } catch {
+                /* ignore */
+              }
+            }}
+          >
+            ✕
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -251,9 +358,9 @@ function EmptyQueue({ code, canAdd }: { code: string; canAdd: boolean }) {
       <Equalizer className="h-8" />
       <p className="text-muted">The queue is empty. Start the party!</p>
       {canAdd && (
-        <Link href={`/e/${code}/pick`} className="btn btn-primary">
-          Pick your party tracks
-        </Link>
+        <a href={`/e/${code}/pick`} className="btn btn-primary">
+          Pick a song
+        </a>
       )}
     </div>
   );
@@ -305,24 +412,57 @@ function People({ code, eventId, meId }: { code: string; eventId: string; meId: 
               <span>
                 {p.songs.length} song{p.songs.length === 1 ? "" : "s"} · ♥ {p.heartsReceived} hearts received
               </span>
-              {p.id !== meId && supportMailto("x") && (
-                <a
-                  className="underline-offset-2 hover:text-white hover:underline"
-                  href={
-                    supportMailto(
-                      `Report a guest at party ${code}`,
-                      `Party code: ${code}\nGuest: ${p.displayName} (@${p.instagram})\n\nWhat happened:\n`,
-                    )!
-                  }
-                >
-                  Report
-                </a>
-              )}
+              {p.id !== meId && meId && <ReportButton code={code} person={p} />}
             </p>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+const REPORT_REASONS = ["Fake or impersonating someone", "Offensive name or photo", "Spamming requests", "Something else"];
+
+/** Guests report someone to the host (rate limited on the server). */
+function ReportButton({ code, person }: { code: string; person: Person }) {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [sent, setSent] = useState(false);
+  const send = async (reason: string) => {
+    try {
+      await apiFetch(`/api/e/${code}/report`, { method: "POST", json: { guestId: person.id, reason } });
+      setSent(true);
+      setOpen(false);
+      toast("Thanks. The host has been told.", "success");
+    } catch (e) {
+      toast((e as Error).message, "error");
+    }
+  };
+  if (sent) return <span>Reported</span>;
+  return (
+    <span className="relative">
+      <button className="min-h-8 underline-offset-2 hover:text-white hover:underline" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        Report
+      </button>
+      {open && (
+        <span className="glass absolute bottom-full right-0 z-10 mb-2 flex w-64 flex-col rounded-2xl p-1.5 text-left shadow-2xl">
+          <span className="px-3 py-2 text-xs text-muted">Report @{person.instagram} to the host:</span>
+          {REPORT_REASONS.map((r) => (
+            <button key={r} className="min-h-11 rounded-xl px-3 text-left text-sm text-white hover:bg-white/10" onClick={() => send(r)}>
+              {r}
+            </button>
+          ))}
+          {supportMailto("x") && (
+            <a
+              className="min-h-11 rounded-xl px-3 py-3 text-left text-xs text-muted hover:bg-white/10"
+              href={supportMailto(`Report a guest at party ${code}`, `Party code: ${code}\nGuest: ${person.displayName} (@${person.instagram})\n\nWhat happened:\n`)!}
+            >
+              Or email We Party support
+            </a>
+          )}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -406,8 +546,37 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
         )}
       </div>
 
+      {me.myPending.length > 0 && (
+        <div>
+          <SectionTitle>Waiting for the DJ</SectionTitle>
+          <ul className="flex flex-col gap-2">
+            {me.myPending.map((s) => (
+              <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2.5">
+                <Artwork src={s.artworkUrl} size={48} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{s.title}</p>
+                  <p className="truncate text-sm text-muted">{s.artist}</p>
+                </div>
+                <div className="text-right text-xs">
+                  {s.status === "pending" ? (
+                    <>
+                      <p className="font-bold text-cyan">⏳ Pending</p>
+                      <button className="mt-1 min-h-8 text-muted underline hover:text-white" onClick={() => withdraw(s.id)}>
+                        remove
+                      </button>
+                    </>
+                  ) : (
+                    <p className="text-muted">Not tonight</p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div>
-        <SectionTitle right={`${my.length}/${data.event.maxPicks}`}>Song requests</SectionTitle>
+        <SectionTitle right={`${me.songsSubmitted}/${data.event.maxPicks}`}>Song requests</SectionTitle>
         {my.length === 0 ? (
           <p className="py-6 text-center text-muted">You haven&apos;t picked any songs yet.</p>
         ) : (

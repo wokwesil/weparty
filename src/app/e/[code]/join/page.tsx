@@ -1,16 +1,8 @@
-import { notFound, redirect } from "next/navigation";
-import { getEventByCode } from "@/lib/services/events";
-import { currentGuest } from "@/lib/session";
-import { JoinForm } from "./JoinForm";
+import { redirect } from "next/navigation";
 
 type Props = { params: Promise<{ code: string }> };
-export const dynamic = "force-dynamic";
-export const metadata = { title: "Join the party" };
 
+/** Old link: joining now happens on the party's first screen. */
 export default async function JoinPage({ params }: Props) {
-  const event = await getEventByCode((await params).code);
-  if (!event) notFound();
-  if (event.status === "ended") redirect(`/e/${event.code}/replay`);
-  if (await currentGuest(event)) redirect(`/e/${event.code}/party`);
-  return <JoinForm code={event.code} eventName={event.name} />;
+  redirect(`/e/${encodeURIComponent((await params).code)}`);
 }

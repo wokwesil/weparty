@@ -72,8 +72,10 @@ d("party flow (database)", () => {
     // same Instagram can't register twice in one event
     await expect(m.guests.registerGuest(e, { displayName: "x", instagram: "BOB_DJ" })).rejects.toThrow(/already at this party/);
 
-    // must pick at least 5 the first time, at most 10 total
-    await expect(m.queue.submitSongs(e, g[0], songs(1, 3))).rejects.toThrow(/at least 5/);
+    // the host can require more than one song (default is 1), at most 10 total
+    await m.events.updateSettings(hostId, eventId, { minPicks: 5 });
+    await expect(m.queue.submitSongs(await ev(), g[0], songs(1, 3))).rejects.toThrow(/at least 5/);
+    await m.events.updateSettings(hostId, eventId, { minPicks: 1 });
     await expect(m.queue.submitSongs(e, g[0], songs(1, 11))).rejects.toThrow(/up to|can add|already added/);
     expect(await m.queue.submitSongs(e, g[0], songs(1, 5))).toMatchObject({ added: 5, total: 5 });
     expect(await m.queue.submitSongs(e, g[1], songs(10, 5))).toMatchObject({ added: 5 });
@@ -85,7 +87,7 @@ d("party flow (database)", () => {
     await m.queue.submitSongs(e, g[0], songs(40, 5));
     await expect(m.queue.submitSongs(e, g[0], [song(50)])).rejects.toThrow(/already added your 10/);
 
-    let snap = await m.queue.getSnapshot(e);
+    let snap = await m.queue.getSnapshot(await ev());
     expect(snap.queue.length).toBe(5 + 5 + 3 + 5 + 5);
     expect(snap.stats.guests).toBe(4);
     const s1 = snap.queue.find((s) => s.appleSongId === "test-1")!;
@@ -101,7 +103,7 @@ d("party flow (database)", () => {
     const target = snap.queue.find((s) => s.appleSongId === "test-34")!; // dee's 5th song
     for (const voter of [g[0], g[1], g[2]]) await m.queue.setVote(e, voter, target.id, true);
     await m.queue.setVote(e, g[1], target.id, true); // duplicate vote ignored
-    snap = await m.queue.getSnapshot(e);
+    snap = await m.queue.getSnapshot(await ev());
     const t2 = snap.queue.find((s) => s.id === target.id)!;
     expect(t2.votes).toBe(3);
     expect(t2.position).toBeLessThan(target.position!);
@@ -112,37 +114,37 @@ d("party flow (database)", () => {
 
     // host plays songs
     await m.queue.hostQueueAction(hostId, eventId, { type: "next" });
-    snap = await m.queue.getSnapshot(e);
+    snap = await m.queue.getSnapshot(await ev());
     const first = snap.nowPlaying!;
     expect(first).toBeTruthy();
     // votes on the playing song don't move it
     await m.queue.setVote(e, g.find((x) => x.id !== first.requester?.id)!, first.id, true);
-    expect((await m.queue.getSnapshot(e)).nowPlaying!.id).toBe(first.id);
+    expect((await m.queue.getSnapshot(await ev())).nowPlaying!.id).toBe(first.id);
 
     await m.queue.hostQueueAction(hostId, eventId, { type: "next" });
-    const second = (await m.queue.getSnapshot(e)).nowPlaying!;
+    const second = (await m.queue.getSnapshot(await ev())).nowPlaying!;
     // skip the third one while it plays -> not in replay
     await m.queue.hostQueueAction(hostId, eventId, { type: "next" });
-    const third = (await m.queue.getSnapshot(e)).nowPlaying!;
+    const third = (await m.queue.getSnapshot(await ev())).nowPlaying!;
     await m.queue.hostQueueAction(hostId, eventId, { type: "skip", itemId: third.id });
 
     // host override: move the last song to the top, then play it
-    snap = await m.queue.getSnapshot(e);
+    snap = await m.queue.getSnapshot(await ev());
     const last = snap.queue[snap.queue.length - 1];
     await m.queue.hostQueueAction(hostId, eventId, { type: "move", itemId: last.id, toIndex: 0 });
-    snap = await m.queue.getSnapshot(e);
+    snap = await m.queue.getSnapshot(await ev());
     expect(snap.queue[0].id).toBe(last.id);
     expect(snap.queue[0].pinned).toBe(true);
     // the crowd can't push past a pinned song
     const second2 = snap.queue[1];
     for (const voter of g) if (voter.id !== second2.requester?.id) await m.queue.setVote(e, voter, second2.id, true).catch(() => {});
-    expect((await m.queue.getSnapshot(e)).queue[0].id).toBe(last.id);
+    expect((await m.queue.getSnapshot(await ev())).queue[0].id).toBe(last.id);
 
     await m.queue.hostQueueAction(hostId, eventId, { type: "play_now", itemId: last.id });
     // remove a song
-    const toRemove = (await m.queue.getSnapshot(e)).queue[2];
+    const toRemove = (await m.queue.getSnapshot(await ev())).queue[2];
     await m.queue.hostQueueAction(hostId, eventId, { type: "remove", itemId: toRemove.id });
-    expect((await m.queue.getSnapshot(e)).queue.find((s) => s.id === toRemove.id)).toBeUndefined();
+    expect((await m.queue.getSnapshot(await ev())).queue.find((s) => s.id === toRemove.id)).toBeUndefined();
 
     // pause submissions blocks guests
     await m.events.setSubmissionsOpen(hostId, eventId, false);
