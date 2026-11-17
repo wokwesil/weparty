@@ -156,7 +156,7 @@ export function HostPlayer({ eventId, snapshot, onChanged }: { eventId: string; 
   const playing = state === PlaybackState.playing;
 
   return (
-    <section className="glass mb-4 flex flex-col gap-3 rounded-3xl p-4" aria-label="WeParty player">
+    <section className="glass sticky bottom-3 z-30 mt-4 flex flex-col gap-3 rounded-3xl bg-night-2/95 p-4 shadow-2xl backdrop-blur-xl" aria-label="WeParty player">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs font-bold tracking-[0.3em] text-muted uppercase">WeParty player</span>
         <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-100">Backup to Offtrack</span>
