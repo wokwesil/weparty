@@ -26,7 +26,7 @@ export default function SupportPage() {
         <ul>
           <li>Scan the QR code at the party with your phone camera, or open We Party and tap <b>Scan party QR</b> in the app.</li>
           <li>No QR code? Open We Party, tap <b>Enter party</b> (or <b>Type party code</b> in the app) and type the code the host gives you.</li>
-          <li>Enter your name and Instagram username, add a photo if you like, then pick 5 to 10 songs.</li>
+          <li>Enter your name and Instagram username, add a photo if you like, then pick a song (one is enough; you can add more all night).</li>
           <li>Heart other people&apos;s picks to move them up the queue. Everyone gets a fair turn.</li>
         </ul>
       </InfoSection>

@@ -4,12 +4,17 @@ import { notFound } from "next/navigation";
 import { Artwork } from "@/components/Artwork";
 import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Backdrop, PoweredBy, Wordmark } from "@/components/Brand";
-import { Requester } from "@/components/SongCard";
+import { DjSpotlight } from "@/components/DjSpotlight";
+import { FollowCard } from "@/components/FollowCard";
+import { Requester } from "@/components/Requester";
+import { flags } from "@/lib/flags";
 import { normalizeSettings } from "@/lib/ranking";
 import { getEventByCode } from "@/lib/services/events";
+import { FOLLOW_CONSENT, followerTarget, getGuestRecap } from "@/lib/services/growth";
 import { getReplay } from "@/lib/services/queue";
 import { currentGuest } from "@/lib/session";
 import { eventJoinUrl } from "@/lib/urls";
+import { Recap } from "./Recap";
 import { ReplayActions } from "./ReplayActions";
 
 type Props = { params: Promise<{ code: string }> };
@@ -42,6 +47,8 @@ export default async function ReplayPage({ params }: Props) {
   if (!replay) notFound();
   const showPeople = normalizeSettings(event.settings).replayShowPeople;
   const guest = await currentGuest(event);
+  const growth = flags.growth;
+  const [recap, follow] = growth ? await Promise.all([guest ? getGuestRecap(event, guest) : null, followerTarget(event)]) : [null, null];
   const shareUrl = `${(await eventJoinUrl(event.code))}/replay`;
   const date = (event.starts_at ?? event.created_at).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", year: "numeric" });
   const covers = replay.played.filter((s) => s.artworkUrl).slice(0, 4);
@@ -53,9 +60,9 @@ export default async function ReplayPage({ params }: Props) {
     <main className="relative mx-auto min-h-dvh max-w-2xl px-4 pb-16 pt-[max(1rem,env(safe-area-inset-top))]">
       <Backdrop />
       <header className="flex items-center justify-between py-2">
-        <Link href="/"><Wordmark size="sm" /></Link>
+        <Link href="/" className="tap"><Wordmark size="sm" /></Link>
         {guest && !live && <span className="text-xs text-muted">Thanks for coming, {guest.display_name}!</span>}
-        {live && guest && <Link href={`/e/${event.code}/party`} className="text-sm text-muted hover:text-white">← Live queue</Link>}
+        {live && guest && <Link href={`/e/${event.code}/party`} className="tap text-sm text-muted hover:text-white">← Live queue</Link>}
       </header>
 
       <section className="mt-6 flex flex-col items-center text-center">
@@ -69,6 +76,11 @@ export default async function ReplayPage({ params }: Props) {
         <p className="mt-6 text-xs font-bold tracking-[0.35em] text-pink uppercase">{live ? "Replay so far" : "Your WeParty Replay"}</p>
         <h1 className="mt-2 font-display text-3xl font-black leading-tight sm:text-4xl">{event.name}</h1>
         <p className="mt-2 text-muted">{[event.venue_name, date].filter(Boolean).join(" · ")}</p>
+        {replay.event.dj && (
+          <div className="mt-4 w-full max-w-xs">
+            <DjSpotlight dj={replay.event.dj} label={live ? "is spinning" : "was on the decks"} />
+          </div>
+        )}
         <div className="mt-5 grid w-full max-w-md grid-cols-4 gap-2 text-center">
           {[
             [replay.stats.played, "songs played"],
@@ -83,6 +95,8 @@ export default async function ReplayPage({ params }: Props) {
           ))}
         </div>
       </section>
+
+      {recap && <Recap recap={recap} code={event.code} showPeople={showPeople} />}
 
       <ReplayActions
         code={event.code}
@@ -146,9 +160,20 @@ export default async function ReplayPage({ params }: Props) {
         </section>
       )}
 
+      {follow && (
+        <div className="mt-10">
+          <FollowCard code={event.code} name={follow.name} consentText={FOLLOW_CONSENT} />
+        </div>
+      )}
+
       <footer className="mt-14 flex flex-col items-center gap-2 text-center">
         <Wordmark size="sm" />
         <p className="text-sm">Where We All Control the Vibes.</p>
+        {growth && (
+          <Link href="/host/signup?ref=replay" className="btn btn-ghost mt-2 min-h-12 px-5 text-sm">
+            Host your own party with We Party →
+          </Link>
+        )}
         <PoweredBy />
       </footer>
     </main>

@@ -5,8 +5,20 @@ import { api } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
+/** The newest database update this version of the app needs. */
+const LATEST_MIGRATION = "0003_growth";
+
 /** Quick check that the app and database are working. Shows no secrets. */
 export const GET = api(async () => {
   await sql`select 1`;
-  return { ok: true, database: true, realtime: realtimeConfigured(), appleMusic: appleMusicConfigured(), search: searchSource() };
+  const rows = await sql<{ version: string }[]>`select version from schema_migrations where version = ${LATEST_MIGRATION}`.catch(() => []);
+  return {
+    ok: rows.length > 0,
+    database: true,
+    databaseUpToDate: rows.length > 0,
+    ...(rows.length ? {} : { fix: `Run supabase/migrations/${LATEST_MIGRATION}.sql in the Supabase SQL editor.` }),
+    realtime: realtimeConfigured(),
+    appleMusic: appleMusicConfigured(),
+    search: searchSource(),
+  };
 });

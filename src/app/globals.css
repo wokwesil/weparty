@@ -172,6 +172,25 @@ html[data-native-app] body {
   -webkit-touch-callout: none;
 }
 
+/* Minimum 44x44 tap area for small links and buttons (Apple and Google guidance). */
+@utility tap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Grows the touch area of a small inline link to 44px tall without changing the layout. */
+@utility tap-area {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -14px -4px;
+  }
+}
+
 /* Privacy / Support pages */
 .info-prose ul {
   list-style: disc;
@@ -182,8 +201,9 @@ html[data-native-app] body {
 }
 .info-prose a {
   color: var(--color-pink);
+  text-decoration: underline;
   text-underline-offset: 3px;
 }
 .info-prose a:hover {
-  text-decoration: underline;
+  color: white;
 }

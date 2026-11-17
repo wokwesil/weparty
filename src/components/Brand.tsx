@@ -15,13 +15,13 @@ export function Equalizer({ className = "", bars = 5 }: { className?: string; ba
 export function Wordmark({ size = "md" }: { size?: "sm" | "md" | "xl" }) {
   const cls =
     size === "xl"
-      ? "text-6xl sm:text-8xl"
+      ? "text-[clamp(2.25rem,12vw,6rem)]"
       : size === "md"
         ? "text-2xl"
         : "text-lg";
   return (
     <span className={`font-display font-black tracking-tight ${cls}`}>
-      <span className="text-gradient">WEPARTY</span>
+      <span className="text-gradient whitespace-nowrap [word-spacing:0.18em]">WE PARTY</span>
     </span>
   );
 }

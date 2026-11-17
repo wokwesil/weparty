@@ -44,7 +44,7 @@ export function SongBrowser({
               role="tab"
               aria-selected={mode === m}
               onClick={() => setMode(m)}
-              className={`rounded-full py-2 transition ${mode === m ? "bg-white text-night" : "text-muted"}`}
+              className={`min-h-11 rounded-full py-2 transition ${mode === m ? "bg-white text-night" : "text-muted"}`}
             >
               {m === "search" ? "Search all music" : " My Apple Music"}
             </button>
@@ -114,7 +114,7 @@ function SearchPane(props: Parameters<typeof SongBrowser>[0]) {
       {!loading && q.trim().length >= 2 && songs.length === 0 && !error && (
         <p className="text-center text-sm text-muted">No songs found. Try another search.</p>
       )}
-      <SongList songs={songs} {...props} />
+      <SongList songs={songs} {...props} label="Search results" />
     </div>
   );
 }
@@ -213,7 +213,8 @@ export function SongList({
   onToggle,
   lockedIds = [],
   lockedLabel = "Added",
-}: Parameters<typeof SongBrowser>[0] & { songs: Song[] }) {
+  label,
+}: Parameters<typeof SongBrowser>[0] & { songs: Song[]; label?: string }) {
   const [playing, setPlaying] = useState<string | null>(null);
   useEffect(() => () => audio?.pause(), []);
   const preview = (s: Song) => {
@@ -231,7 +232,7 @@ export function SongList({
     setPlaying(s.appleId);
   };
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className="flex flex-col gap-1" aria-label={label}>
       {songs.map((s) => {
         const isSel = selected.has(s.appleId);
         const locked = lockedIds.includes(s.appleId);
@@ -240,20 +241,22 @@ export function SongList({
             <div
               className={`flex w-full items-center gap-3 rounded-2xl p-2 text-left transition ${isSel ? "bg-violet/20 ring-1 ring-violet/60" : "hover:bg-white/5"}`}
             >
-              <button
-                type="button"
-                className="relative"
-                onClick={() => preview(s)}
-                aria-label={s.previewUrl ? `Preview ${s.title}` : undefined}
-                disabled={!s.previewUrl}
-              >
-                <Artwork src={s.artworkUrl} size={52} />
-                {s.previewUrl && (
-                  <span className="absolute inset-0 grid place-items-center rounded-xl bg-black/35 text-sm text-white opacity-90">
+              {s.previewUrl ? (
+                <button
+                  type="button"
+                  className="relative shrink-0"
+                  onClick={() => preview(s)}
+                  aria-label={playing === s.appleId ? `Stop preview of ${s.title}` : `Play a preview of ${s.title}`}
+                  aria-pressed={playing === s.appleId}
+                >
+                  <Artwork src={s.artworkUrl} size={52} />
+                  <span aria-hidden className="absolute inset-0 grid place-items-center rounded-xl bg-black/35 text-sm text-white opacity-90">
                     {playing === s.appleId ? "❚❚" : "▶"}
                   </span>
-                )}
-              </button>
+                </button>
+              ) : (
+                <Artwork src={s.artworkUrl} size={52} />
+              )}
               <button type="button" className="min-w-0 flex-1 text-left" onClick={() => !locked && onToggle(s)} disabled={locked}>
                 <p className="truncate font-semibold">
                   {s.title} {s.explicit && <span className="ml-1 rounded bg-white/15 px-1 text-[10px] align-middle">E</span>}
@@ -267,7 +270,7 @@ export function SongList({
                 type="button"
                 onClick={() => !locked && onToggle(s)}
                 disabled={locked}
-                className={`grid h-9 min-w-9 place-items-center rounded-full px-2 text-sm font-bold transition ${
+                className={`grid h-11 min-w-11 place-items-center rounded-full px-2 text-sm font-bold transition ${
                   locked ? "text-xs text-muted" : isSel ? "bg-brand text-white" : "border border-line text-white/80"
                 }`}
                 aria-label={isSel ? `Remove ${s.title}` : `Add ${s.title}`}

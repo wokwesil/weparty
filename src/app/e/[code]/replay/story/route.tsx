@@ -47,7 +47,20 @@ export async function GET(req: Request, ctx: Ctx) {
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: og ? "flex-start" : "center", maxWidth: og ? 680 : 920 }}>
           <div style={{ fontSize: og ? 28 : 34, letterSpacing: 10, color: "#ff2e88", fontWeight: 800 }}>MY WEPARTY REPLAY</div>
-          <div style={{ fontSize: og ? 64 : 84, fontWeight: 900, marginTop: 16, textAlign: og ? "left" : "center", lineHeight: 1.05 }}>{event.name}</div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: og ? "flex-start" : "center",
+              width: og ? 680 : 920,
+              fontSize: event.name.length > 40 ? (og ? 44 : 60) : event.name.length > 16 ? (og ? 54 : 72) : og ? 64 : 84,
+              fontWeight: 900,
+              marginTop: 16,
+              textAlign: og ? "left" : "center",
+              lineHeight: 1.1,
+            }}
+          >
+            {event.name}
+          </div>
           <div style={{ fontSize: og ? 28 : 36, color: "#a39fbd", marginTop: 16 }}>
             {`${date} · ${replay.stats.played} songs · ${replay.stats.guests} guests · ${replay.stats.votes} hearts`}
           </div>
@@ -72,7 +85,7 @@ export async function GET(req: Request, ctx: Ctx) {
                 color: "transparent",
               }}
             >
-              WEPARTY
+              WE PARTY
             </div>
             <div style={{ fontSize: og ? 24 : 30, marginTop: 6 }}>Where We All Control the Vibes · Powered by Offtrack</div>
           </div>

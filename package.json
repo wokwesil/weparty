@@ -5,17 +5,19 @@
   "description": "WeParty \u2014 Where We All Control the Vibes. Powered by Offtrack.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/migrate-on-deploy.mjs && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "node tests/e2e/party-flow.mjs",
+    "test:load": "node tests/load/party-load.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "app:icons": "node scripts/make-app-icons.mjs",
     "app:assets": "npx -y @capacitor/assets@4.0.0 generate --ios --android --iconBackgroundColor \"#07060c\" --iconBackgroundColorDark \"#07060c\" --splashBackgroundColor \"#07060c\" --splashBackgroundColorDark \"#07060c\"",
     "app:sync": "cap sync",
     "app:ios": "cap sync ios && cap open ios",
-    "app:android": "cap sync android && cap open android"
+    "app:android": "cap sync android && cap open android",
+    "test:a11y": "node tests/e2e/a11y-audit.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -51,6 +53,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "axe-core": "4.10.2",
     "playwright": "^1.63.0",
     "tailwindcss": "^4.3.5",
     "typescript": "^5.9.3",

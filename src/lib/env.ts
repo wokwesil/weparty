@@ -15,6 +15,8 @@ export const env = {
     privateKey: (process.env.APPLE_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
     storefront: process.env.APPLE_MUSIC_STOREFRONT ?? "us",
   },
+  /** Built-in host/DJ player (Apple MusicKit). Off unless FEATURE_HOST_PLAYER=1. */
+  featureHostPlayer: process.env.FEATURE_HOST_PLAYER === "1",
   /** TEST ONLY: serve songs from a small built-in list instead of Apple. Never set in production. */
   testMusicCatalog: process.env.WEPARTY_TEST_CATALOG === "1",
   isProd: process.env.NODE_ENV === "production",

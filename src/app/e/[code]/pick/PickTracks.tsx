@@ -2,12 +2,16 @@
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Artwork } from "@/components/Artwork";
 import { Backdrop, Wordmark } from "@/components/Brand";
-import { SongBrowser } from "@/components/SongBrowser";
-import { apiFetch } from "@/lib/client";
+import { SongBrowser, SongList } from "@/components/SongBrowser";
+import { ApiError, apiFetch } from "@/lib/client";
+import { trackStep } from "@/lib/device";
+import { hapticTap } from "@/lib/native";
 import type { Song } from "@/lib/types";
+
+const plural = (n: number, word = "song") => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function PickTracks({
   code,
@@ -17,6 +21,8 @@ export function PickTracks({
   alreadyPicked,
   submissionsOpen,
   allowExplicit,
+  approvalMode,
+  partySongs,
 }: {
   code: string;
   eventName: string;
@@ -25,18 +31,26 @@ export function PickTracks({
   alreadyPicked: string[];
   submissionsOpen: boolean;
   allowExplicit: boolean;
+  approvalMode: boolean;
+  partySongs: Song[];
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Map<string, Song>>(new Map());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [trayOpen, setTrayOpen] = useState(false);
+  const tracked = useRef(false);
 
   const already = alreadyPicked.length;
+  const firstTime = already === 0;
   const remaining = Math.max(0, maxPicks - already);
-  const need = already === 0 ? minPicks : 1;
+  const need = firstTime ? minPicks : 1;
   const count = selected.size;
-  const canSubmit = count >= need && count <= remaining && !busy;
+  const canSubmit = count >= need && count <= remaining && !busy && submissionsOpen;
+
+  useEffect(() => {
+    router.prefetch(`/e/${code}/party`);
+  }, [code, router]);
 
   const toggle = (s: Song) => {
     setError(null);
@@ -48,9 +62,18 @@ export function PickTracks({
       const next = new Map(prev);
       if (next.has(s.appleId)) next.delete(s.appleId);
       else if (next.size >= remaining) {
-        setError(`You can pick up to ${remaining} more song${remaining === 1 ? "" : "s"}.`);
+        setError(
+          remaining === 1 ? "You can add 1 more song. Tap a picked song to swap it." : `You can pick up to ${remaining} more songs.`,
+        );
         return prev;
-      } else next.set(s.appleId, s);
+      } else {
+        next.set(s.appleId, s);
+        hapticTap();
+        if (!tracked.current) {
+          tracked.current = true;
+          trackStep(code, "picked");
+        }
+      }
       return next;
     });
   };
@@ -59,13 +82,32 @@ export function PickTracks({
     setBusy(true);
     setError(null);
     try {
-      await apiFetch(`/api/e/${code}/songs`, { method: "POST", json: { songs: [...selected.values()] } });
-      router.replace(`/e/${code}/party?added=${count}`);
+      const res = await apiFetch<{ pending: number; firstTime: boolean }>(`/api/e/${code}/songs`, {
+        method: "POST",
+        json: { songs: [...selected.values()] },
+      });
+      if (firstTime) trackStep(code, "joined");
+      router.replace(`/e/${code}/party?added=${count}${res.pending ? `&pending=${res.pending}` : ""}`);
     } catch (e) {
-      setError((e as Error).message);
+      const err = e as ApiError;
+      setError(err.message);
       setBusy(false);
     }
   };
+
+  const buttonLabel = busy
+    ? "Adding…"
+    : firstTime
+      ? count === 0
+        ? minPicks > 1
+          ? `PICK ${minPicks} SONGS TO JOIN`
+          : "PICK A SONG TO JOIN"
+        : count < need
+          ? `PICK ${need - count} MORE`
+          : `JOIN WITH ${plural(count).toUpperCase()}`
+      : count === 0
+        ? "PICK A SONG"
+        : `ADD ${plural(count).toUpperCase()}`;
 
   const progress = Math.min(1, (already + count) / maxPicks);
 
@@ -74,39 +116,62 @@ export function PickTracks({
       <Backdrop />
       <header className="flex items-center justify-between py-2">
         <Wordmark size="sm" />
-        <Link href={`/e/${code}/party`} className="text-sm text-muted hover:text-white">
-          {already > 0 ? "Back to queue →" : "Skip for now →"}
+        <Link href={`/e/${code}/party`} className="tap text-sm text-muted hover:text-white">
+          {firstTime ? "Look around first →" : "Back to the party →"}
         </Link>
       </header>
-      <section className="mb-5 mt-6">
+      <section className="mb-4 mt-4">
         <p className="text-xs font-semibold tracking-[0.3em] text-muted uppercase">{eventName}</p>
-        <h1 className="mt-2 font-display text-3xl font-black leading-tight sm:text-4xl">
-          PICK YOUR <span className="text-gradient">PARTY TRACKS</span>
+        <h1 className="mt-2 font-display text-3xl font-black leading-tight">
+          {firstTime ? (
+            <>
+              PICK A SONG <span className="text-gradient">TO GET IN</span>
+            </>
+          ) : (
+            <>
+              ADD MORE <span className="text-gradient">SONGS</span>
+            </>
+          )}
         </h1>
-        <p className="mt-2 text-muted">
-          {already === 0
-            ? `Choose ${minPicks === maxPicks ? minPicks : `${minPicks} to ${maxPicks}`} songs. The crowd decides what plays next.`
+        <p className="mt-2 text-sm text-muted">
+          {firstTime
+            ? minPicks > 1
+              ? `Pick ${minPicks} songs to join (up to ${maxPicks}). You can add more all night.`
+              : `One song is enough. You can add up to ${maxPicks} tonight.`
             : remaining > 0
               ? `You've added ${already}. You can add ${remaining} more.`
               : `You've added all ${maxPicks} of your songs. Go heart some others!`}
+          {approvalMode && " The DJ approves requests before they hit the queue."}
         </p>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden>
           <motion.div className="h-full bg-brand" animate={{ width: `${progress * 100}%` }} />
         </div>
       </section>
 
       {!submissionsOpen && (
-        <p className="mb-4 rounded-2xl bg-amber-500/15 px-4 py-3 text-sm text-amber-100">
-          The host has paused song requests for a bit. You can still pick songs and try sending them soon.
+        <p className="mb-4 rounded-2xl bg-amber-500/15 px-4 py-3 text-sm text-amber-100" role="status">
+          The host has paused song requests for a bit. You can still pick songs and send them when requests reopen.
         </p>
       )}
 
       {remaining > 0 ? (
-        <SongBrowser selected={selected} onToggle={toggle} lockedIds={alreadyPicked} />
+        <>
+          <SongBrowser selected={selected} onToggle={toggle} lockedIds={alreadyPicked} />
+          {partySongs.length > 0 && (
+            <section className="mt-6">
+              <h2 className="mb-2 px-1 text-xs font-bold tracking-[0.3em] text-muted uppercase">Already at this party · tap to back one</h2>
+              <SongList songs={partySongs} selected={selected} onToggle={toggle} lockedIds={alreadyPicked} label="Songs already at this party" />
+            </section>
+          )}
+        </>
       ) : (
-        <Link href={`/e/${code}/party`} className="btn btn-primary self-center">
-          Go to the live queue
-        </Link>
+        <div className="glass flex flex-col items-center gap-3 rounded-3xl p-6 text-center">
+          <p className="font-semibold">Song limit reached</p>
+          <p className="text-sm text-muted">You&apos;ve added all {maxPicks} of your songs. Hearts are unlimited!</p>
+          <Link href={`/e/${code}/party`} className="btn btn-primary">
+            Go to the live queue
+          </Link>
+        </div>
       )}
 
       {remaining > 0 && (
@@ -126,7 +191,7 @@ export function PickTracks({
                       <span className="min-w-0 flex-1 truncate text-sm">
                         <b>{s.title}</b> <span className="text-muted">· {s.artist}</span>
                       </span>
-                      <button className="px-2 text-muted hover:text-white" onClick={() => toggle(s)} aria-label={`Remove ${s.title}`}>
+                      <button className="grid h-11 w-11 place-items-center text-muted hover:text-white" onClick={() => toggle(s)} aria-label={`Remove ${s.title}`}>
                         ✕
                       </button>
                     </li>
@@ -137,23 +202,19 @@ export function PickTracks({
             {error && <p className="mb-2 px-1 text-sm text-rose-300" role="alert">{error}</p>}
             <div className="flex items-center gap-3">
               <button
-                className="flex -space-x-3 pl-1"
+                className="flex min-h-11 -space-x-3 pl-1"
                 onClick={() => setTrayOpen((o) => !o)}
-                aria-label="Show selected songs"
+                aria-label={`Show ${plural(count)} you picked`}
                 disabled={count === 0}
               >
                 {count === 0 ? (
-                  <span className="text-sm text-muted">No songs picked yet</span>
+                  <span className="self-center text-xs text-muted">{firstTime ? "Search or tap a song" : `${remaining} left`}</span>
                 ) : (
-                  [...selected.values()].slice(-4).map((s) => <Artwork key={s.appleId} src={s.artworkUrl} size={36} className="ring-2 ring-night" />)
+                  [...selected.values()].slice(-3).map((s) => <Artwork key={s.appleId} src={s.artworkUrl} size={40} className="ring-2 ring-night" />)
                 )}
               </button>
-              <div className="ml-auto text-right text-xs text-muted">
-                <span className="font-display text-lg font-bold text-white">{count}</span>/{remaining}
-                {count < need && <div>pick {need - count} more</div>}
-              </div>
-              <button className="btn btn-primary" disabled={!canSubmit || !submissionsOpen} onClick={submit}>
-                {busy ? "Adding…" : "ADD TO PARTY"}
+              <button className="btn btn-primary ml-auto min-h-12 flex-1 text-sm sm:flex-none" disabled={!canSubmit} onClick={submit}>
+                {buttonLabel}
               </button>
             </div>
           </div>

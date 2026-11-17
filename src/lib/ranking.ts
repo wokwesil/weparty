@@ -33,6 +33,15 @@ export type PartySettings = {
   allowExplicit: boolean;
   /** show who picked each song on the public replay page */
   replayShowPeople: boolean;
+  /** DJ Mode: the control room becomes the DJ Booth and guests see the DJ Spotlight. */
+  djMode: boolean;
+  /** Approval mode: guest requests wait in "Pending" until the DJ approves them. */
+  approvalMode: boolean;
+  /** The next N songs are locked: hearts can't move them (0 = off, max 5). */
+  lockCount: number;
+  /** DJ Spotlight: shown on guest screens and the replay ("DJ ___ is spinning"). */
+  djName: string;
+  djInstagram: string;
 };
 
 export const DEFAULT_SETTINGS: PartySettings = {
@@ -41,10 +50,15 @@ export const DEFAULT_SETTINGS: PartySettings = {
   fairness: 2,
   noBackToBack: true,
   backToBackLookahead: 3,
-  minPicks: 5,
+  minPicks: 1,
   maxPicks: 10,
   allowExplicit: true,
   replayShowPeople: true,
+  djMode: false,
+  approvalMode: false,
+  lockCount: 0,
+  djName: "",
+  djInstagram: "",
 };
 
 export function normalizeSettings(raw: unknown): PartySettings {
@@ -55,6 +69,9 @@ export function normalizeSettings(raw: unknown): PartySettings {
   };
   const bool = (k: keyof PartySettings) =>
     typeof s[k] === "boolean" ? (s[k] as boolean) : (DEFAULT_SETTINGS[k] as boolean);
+  const text = (k: "djName" | "djInstagram", max: number) =>
+    typeof s[k] === "string" ? (s[k] as string).trim().replace(/\s+/g, " ").slice(0, max) : DEFAULT_SETTINGS[k];
+  const ig = text("djInstagram", 60).toLowerCase().replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").split(/[/?#]/)[0];
   const minPicks = Math.round(num("minPicks", 1, 25));
   const maxPicks = Math.max(minPicks, Math.round(num("maxPicks", 1, 25)));
   return {
@@ -67,6 +84,11 @@ export function normalizeSettings(raw: unknown): PartySettings {
     maxPicks,
     allowExplicit: bool("allowExplicit"),
     replayShowPeople: bool("replayShowPeople"),
+    djMode: bool("djMode"),
+    approvalMode: bool("approvalMode"),
+    lockCount: Math.round(num("lockCount", 0, 5)),
+    djName: text("djName", 60),
+    djInstagram: /^[a-z0-9._]{1,30}$/.test(ig) ? ig : "",
   };
 }
 

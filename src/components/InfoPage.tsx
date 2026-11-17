@@ -7,12 +7,12 @@ export function InfoPage({ title, intro, children }: { title: string; intro?: Re
     <main className="relative mx-auto min-h-dvh max-w-2xl px-5 pb-16 pt-[max(1rem,env(safe-area-inset-top))]">
       <Backdrop />
       <header className="flex items-center justify-between py-4">
-        <Link href="/" aria-label="We Party home">
+        <Link href="/" className="tap">
           <Wordmark size="sm" />
         </Link>
         <nav className="flex gap-4 text-sm text-muted">
-          <Link href="/support" className="hover:text-white">Support</Link>
-          <Link href="/privacy" className="hover:text-white">Privacy</Link>
+          <Link href="/support" className="tap hover:text-white">Support</Link>
+          <Link href="/privacy" className="tap hover:text-white">Privacy</Link>
         </nav>
       </header>
       <h1 className="mt-6 font-display text-3xl font-black">{title}</h1>

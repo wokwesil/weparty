@@ -59,10 +59,31 @@
 | `song_requests` | Which guests picked each song (duplicates become extra requests) |
 | `votes` | Hearts. Primary key (song, guest) makes duplicate votes impossible |
 | `event_log` | Audit trail of host actions and key moments |
-| `rate_limits` | Abuse protection for sign-ups, search, hearts |
+| `rate_limits` | Abuse protection for sign-ups, joins, search, songs, hearts, reports, shoutouts |
+| `event_blocklist` | DJ-blocked songs and artists per event |
+| `event_shoutouts` | DJ messages pushed to guest screens (shown for 15 minutes) |
+| `event_dj_photos` | DJ Spotlight photo |
+| `join_funnel` | Anonymous per-phone join steps (scanned → profile → picked → joined) |
+| `guest_reports` | Guest-to-host reports (one per reporter per guest) |
+| `search_cache` | Song search results shared by all guests (12 hours) |
 
 Important constraints: unique `(event_id, apple_song_id)` (no duplicate songs),
 unique `(event_id, instagram_username)`, and at most one `playing` song per event.
+
+Song statuses: `pending` (waiting for DJ approval) → `queued` → `playing` → `played`,
+or `skipped` / `removed` / `declined`. Only `queued` songs are ranked.
+
+**Snapshot sharing:** every change bumps `events.version`. The server builds one
+queue snapshot per (event, version) and hands the same one to every phone, so
+150 phones refreshing costs one queue build, not 150.
+
+## DJ Mode
+
+DJ Mode lives in the event's `settings` (`djMode`, `approvalMode`, `lockCount`,
+`djName`, `djInstagram`). Approval and locks only apply while DJ Mode is on.
+**Locks** reuse host pins: the top N ranked songs get `pinned_rank`, and after
+anything changes the queue (`refillLock`) the next crowd favorite slides in so N
+stay locked. Votes still count; they just can't move locked songs.
 
 ## The Party Shuffle algorithm
 

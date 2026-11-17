@@ -14,6 +14,7 @@ export type AppleSongResource = {
     url?: string;
     previews?: { url?: string }[];
     contentRating?: string;
+    genreNames?: string[];
     playParams?: { id?: string; catalogId?: string; isLibrary?: boolean };
   };
 };
@@ -41,5 +42,6 @@ export function fromAppleResource(r: AppleSongResource): Song | null {
     appleUrl: a.url ?? null,
     previewUrl: a.previews?.[0]?.url ?? null,
     explicit: a.contentRating === "explicit",
+    genre: a.genreNames?.find((g) => g !== "Music") ?? null,
   };
 }

@@ -12,6 +12,11 @@ Total time: about 30 minutes.
    pick a strong database password (save it), choose the region closest to the party.
 2. When it's ready, open **SQL Editor → New query**, paste everything from
    `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success".
+   Then do the same with each later file in that folder, in number order
+   (`0002_join_djmode_reliability.sql`, then `0003_growth.sql`). Each one is safe to run twice.
+   After the first setup you don't need to do this again: every production deploy on
+   Vercel runs any new database updates automatically before going live
+   (`scripts/migrate-on-deploy.mjs`). If one fails, the deploy fails and the old version stays up.
 3. Collect these values:
    - **Project Settings → Database → Connection string → Transaction pooler**.
      Copy the URI and replace `[YOUR-PASSWORD]` with your database password.

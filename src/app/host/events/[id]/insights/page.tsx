@@ -5,6 +5,7 @@ import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Backdrop, Wordmark } from "@/components/Brand";
 import { sql } from "@/lib/db";
 import { getEventById } from "@/lib/services/events";
+import { getFunnel } from "@/lib/services/dj";
 import { listPeople } from "@/lib/services/guests";
 import { requireEventRole } from "@/lib/services/hosts";
 import { getReplay, getTimeline } from "@/lib/services/queue";
@@ -21,7 +22,7 @@ export default async function Insights({ params }: Props) {
   const { id } = await params;
   const event = await getEventById(id);
   if (!event || !(await requireEventRole(host.id, id).catch(() => null))) notFound();
-  const [replay, people, timeline, counts] = await Promise.all([
+  const [replay, people, timeline, counts, funnel] = await Promise.all([
     getReplay(id),
     listPeople(id),
     getTimeline(id),
@@ -32,6 +33,7 @@ export default async function Insights({ params }: Props) {
         (select count(*)::int from queue_items where event_id = ${id} and status = 'skipped') as skipped,
         (select count(*)::int from queue_items where event_id = ${id} and status = 'removed') as removed,
         (select count(distinct guest_id)::int from votes where event_id = ${id}) as voters`,
+    getFunnel(id),
   ]);
   if (!replay) notFound();
   const c = counts[0];
@@ -52,7 +54,7 @@ export default async function Insights({ params }: Props) {
     <main className="relative mx-auto min-h-dvh max-w-5xl px-4 pb-16 pt-4">
       <Backdrop />
       <header className="flex items-center gap-4 py-3">
-        <Link href="/host" className="text-sm text-muted hover:text-white">← Events</Link>
+        <Link href="/host" className="tap text-sm text-muted hover:text-white">← Events</Link>
         <Wordmark size="sm" />
       </header>
       <h1 className="mt-4 font-display text-3xl font-black">{event.name}</h1>
@@ -67,6 +69,42 @@ export default async function Insights({ params }: Props) {
         {stat(replay.stats.played, "songs played")}
         {stat(c.skipped, "skipped")}
         {stat(c.removed, "removed")}
+      </section>
+
+      <section className="mt-6 glass rounded-3xl p-5">
+        <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">Join drop-off (QR scan to in the party)</h2>
+        {funnel.steps[0].count === 0 ? (
+          <p className="mt-2 text-sm text-muted">No scans yet. This fills in as guests open the party link.</p>
+        ) : (
+          <>
+            <ol className="mt-4 flex flex-col gap-3">
+              {funnel.steps.map((st, i) => {
+                const top = funnel.steps[0].count || 1;
+                const prev = i === 0 ? st.count : funnel.steps[i - 1].count;
+                const lost = Math.max(0, prev - st.count);
+                return (
+                  <li key={st.step}>
+                    <div className="flex items-baseline justify-between text-sm">
+                      <span className="font-semibold">{i + 1}. {st.label}</span>
+                      <span>
+                        <b>{st.count}</b> <span className="text-muted">({Math.round((st.count / top) * 100)}%)</span>
+                        {i > 0 && lost > 0 && <span className="ml-2 text-xs text-rose-300">−{lost} dropped</span>}
+                      </span>
+                    </div>
+                    <div className="mt-1 h-2.5 rounded-full bg-white/10">
+                      <div className="h-2.5 rounded-full bg-brand" style={{ width: `${(st.count / top) * 100}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="mt-4 text-sm text-muted">
+              {funnel.medianSecondsToJoin !== null
+                ? `Typical time from scan to in the party: ${funnel.medianSecondsToJoin} seconds (goal: under 30). ${funnel.under30s} guest${funnel.under30s === 1 ? "" : "s"} made it in under 30 seconds.`
+                : "Time to join shows up once guests finish joining."}
+            </p>
+          </>
+        )}
       </section>
 
       <section className="mt-6 glass rounded-3xl p-5">

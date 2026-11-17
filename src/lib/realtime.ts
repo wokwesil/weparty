@@ -1,4 +1,5 @@
 import "server-only";
+import { sql } from "./db";
 import { env, realtimeConfigured } from "./env";
 
 /**
@@ -10,6 +11,12 @@ import { env, realtimeConfigured } from "./env";
  * If Realtime is not configured, phones fall back to checking every few seconds.
  */
 export async function notifyEventChanged(eventId: string, kind = "changed") {
+  // New version number = every phone's next refresh gets a freshly built queue.
+  try {
+    await sql`update events set version = version + 1 where id = ${eventId}`;
+  } catch (err) {
+    console.warn("[realtime] version bump failed", err);
+  }
   if (!realtimeConfigured()) return;
   try {
     await fetch(`${env.supabaseUrl}/realtime/v1/api/broadcast`, {

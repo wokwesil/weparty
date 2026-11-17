@@ -42,7 +42,7 @@ Character limits are shown in brackets. Anything in **[square brackets]** is you
 >
 > **CONNECT**: Add your name, Instagram username and a photo so people at the party can find you.
 >
-> **SELECT**: Search millions of songs and pick 5 to 10 tracks for the queue.
+> **SELECT**: Search millions of songs and pick your tracks for the queue (one is enough to join).
 >
 > **VOTE**: Heart other guests' picks. The most-loved songs move up the queue live, on everyone's phone.
 >

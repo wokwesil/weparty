@@ -54,6 +54,11 @@ export default function PrivacyPage() {
             <b>A private party key</b> stored as a cookie on your device so you stay signed in to that party. We only keep a scrambled
             (hashed) copy of it.
           </li>
+          <li>
+            <b>Your email</b>, only if you choose to follow a host or DJ. We share it with that host so they can tell you about their
+            next party, together with when you followed and from which party. Every email must let you unsubscribe, and you can
+            unsubscribe any time. We don&apos;t send push notifications.
+          </li>
         </ul>
       </InfoSection>
 

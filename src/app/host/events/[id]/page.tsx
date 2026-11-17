@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { normalizeSettings } from "@/lib/ranking";
 import { getEventById } from "@/lib/services/events";
 import { requireEventRole } from "@/lib/services/hosts";
 import { eventJoinUrl } from "@/lib/urls";
@@ -7,7 +8,10 @@ import { ControlRoom } from "./ControlRoom";
 
 type Props = { params: Promise<{ id: string }> };
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Control room" };
+export async function generateMetadata({ params }: Props) {
+  const event = await getEventById((await params).id);
+  return { title: event && normalizeSettings(event.settings).djMode ? "DJ Booth" : "Control room" };
+}
 
 export default async function ControlRoomPage({ params }: Props) {
   const host = await requireHostPage();

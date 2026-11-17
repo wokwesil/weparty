@@ -1,21 +1,10 @@
 "use client";
 import { motion } from "motion/react";
 import { Artwork } from "./Artwork";
-import { Avatar, InstagramLink } from "./Avatar";
 import { HeartButton } from "./Heart";
+import { Requester } from "./Requester";
+export { Requester };
 import type { SongView } from "@/lib/types";
-
-export function Requester({ song, compact = false }: { song: SongView; compact?: boolean }) {
-  if (!song.requester) return <span className="text-xs text-muted">Added by the host</span>;
-  const others = song.alsoRequestedBy.length;
-  return (
-    <span className="flex min-w-0 items-center gap-1.5 text-xs">
-      <Avatar person={song.requester} size={compact ? 18 : 20} />
-      <InstagramLink username={song.requester.instagram} className="truncate" />
-      {others > 0 && <span className="shrink-0 text-muted">+{others}</span>}
-    </span>
-  );
-}
 
 export function SongCard({
   song,
@@ -46,7 +35,7 @@ export function SongCard({
     >
       {showPosition && (
         <span className="w-6 shrink-0 text-center font-display text-sm font-bold text-muted tabular-nums">
-          {song.pinned ? "📌" : song.position}
+          {song.locked ? <span aria-label={`Locked by the DJ at number ${song.position}`}>🔒</span> : song.pinned ? "📌" : song.position}
         </span>
       )}
       <Artwork src={song.artworkUrl} size={56} />
