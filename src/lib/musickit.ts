@@ -34,8 +34,8 @@ export async function isAppleMusicAvailable() {
   // Apple's sign-in window can't open inside the iPhone/Android app, so Apple Music
   // features stay on the website (Safari/Chrome) for now.
   if (isNativeApp()) return false;
-  const res = await fetch("/api/music/token", { cache: "no-store" });
-  return res.ok;
+  const res = await fetch("/api/music/token?check=1", { cache: "no-store" });
+  return res.ok && Boolean(((await res.json()) as { available?: boolean }).available);
 }
 
 export function getMusicKit(): Promise<MusicKitInstance> {

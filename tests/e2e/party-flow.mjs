@@ -53,6 +53,8 @@ try {
   check(true, "host account created");
   await host.locator('input[name="eventName"]').fill("WeParty Launch Night");
   await host.getByPlaceholder("Venue (optional)").fill("The Loft");
+  const terms = host.getByRole("checkbox", { name: /host terms/ });
+  if (await terms.count()) await terms.check(); // only shown when FEATURE_TERMS=1
   await host.getByRole("button", { name: "Create event + QR code" }).click();
   await host.waitForURL(/\/host\/events\/[0-9a-f-]{36}$/);
   const eventId = host.url().split("/").pop();
@@ -271,6 +273,25 @@ try {
   const story = await g.request.get(`${BASE}/e/${code}/replay/story`);
   check(story.ok() && story.headers()["content-type"] === "image/png", "Instagram Story image renders");
   fs.writeFileSync(path.join(SHOTS, "09-instagram-story.png"), await story.body());
+
+  if (s.growth) {
+    console.log("Growth features (FEATURE_GROWTH=1)");
+    await g.getByRole("heading", { name: "Your night in music" }).waitFor();
+    check(true, "guest sees \"Your night in music\" on the replay");
+    const mine = await g.request.get(`${BASE}/e/${code}/replay/me`);
+    const png = await mine.body();
+    check(mine.ok() && png.readUInt32BE(16) === 1080 && png.readUInt32BE(20) === 1920, "personal 9:16 story image renders (1080x1920)");
+    fs.writeFileSync(path.join(SHOTS, "09b-my-night-story.png"), png);
+    await g.getByPlaceholder("you@email.com").fill("fan@example.com");
+    await g.getByRole("checkbox", { name: /Email me when they host/ }).check();
+    await g.getByRole("button", { name: /^Follow / }).click();
+    await g.getByText(/You're following/).waitFor();
+    check(true, "guest followed the host by email (with consent)");
+    check(await g.getByRole("link", { name: /Host your own party/ }).isVisible(), "replay shows \"Host your own party\" link");
+    await shot(g, "08c-replay-growth-phone");
+    const taste = await phones[0].page.request.get(`${BASE}/api/e/${code}/taste`);
+    check(taste.ok() && Array.isArray((await taste.json()).matches), "taste matches load in the party");
+  }
   const csv = await host.request.get(`${BASE}/api/host/events/${eventId}/export?list=played&format=csv`);
   check(csv.ok() && (await csv.text()).includes("Apple Music ID"), "host can export the played playlist as CSV");
 
@@ -282,7 +303,7 @@ try {
   await host.screenshot({ path: path.join(SHOTS, "10b-host-insights-full.png"), fullPage: true });
 
   console.log("Returning guest joins the next party in one tap");
-  const ev2 = await (await host.request.post(`${BASE}/api/host/events`, { data: { name: "WeParty Night Two" }, headers: { Origin: BASE } })).json();
+  const ev2 = await (await host.request.post(`${BASE}/api/host/events`, { data: { name: "WeParty Night Two", acceptTerms: true }, headers: { Origin: BASE } })).json();
   const ev2Code = (await (await host.request.get(`${BASE}/api/host/events`)).json()).events.find((e) => e.id === ev2.id).code;
   const back = phones[0].page;
   await back.goto(`${BASE}/e/${ev2Code}`);

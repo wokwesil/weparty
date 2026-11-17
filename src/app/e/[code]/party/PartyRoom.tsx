@@ -1,5 +1,5 @@
 "use client";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,10 +12,10 @@ import { ToastProvider, useToast } from "@/components/Toast";
 import { apiFetch, resizeImage } from "@/lib/client";
 import { hapticTap, shareLink } from "@/lib/native";
 import { supportMailto } from "@/lib/site";
-import type { GuestMe, QueueSnapshot, SongView } from "@/lib/types";
+import type { GuestMe, PersonRef, QueueSnapshot, SongView } from "@/lib/types";
 import { useLiveData, type LiveStatus } from "@/lib/useLive";
 
-type State = QueueSnapshot & { me: GuestMe | null };
+type State = QueueSnapshot & { me: GuestMe | null; growth?: boolean };
 type Person = {
   id: string;
   displayName: string;
@@ -30,7 +30,9 @@ type Tab = "queue" | "popular" | "people" | "me";
 export function PartyRoom(props: { code: string; eventId: string }) {
   return (
     <ToastProvider>
+      <MotionConfig reducedMotion="user">
       <Room {...props} />
+      </MotionConfig>
     </ToastProvider>
   );
 }
@@ -127,7 +129,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
           </p>
         </div>
         {data.me && (
-          <button onClick={() => setTab("me")} aria-label="My profile">
+          <button onClick={() => setTab("me")} aria-label="My profile" className="tap">
             <Avatar person={data.me} size={34} ring />
           </button>
         )}
@@ -165,7 +167,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${tab === t ? "bg-white text-night" : "bg-white/5 text-muted hover:text-white"}`}
+            className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${tab === t ? "bg-white text-night" : "bg-white/5 text-muted hover:text-white"}`}
           >
             {label}
           </button>
@@ -250,7 +252,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
         </section>
       )}
 
-      {tab === "people" && <People code={code} eventId={eventId} meId={data.me?.id ?? null} />}
+      {tab === "people" && <People code={code} eventId={eventId} meId={data.me?.id ?? null} growth={Boolean(data.growth)} />}
 
       {tab === "queue" && data.me && data.me.myPending.some((p) => p.status === "pending") && (
         <p className="mt-4 text-center text-xs text-muted">
@@ -366,7 +368,7 @@ function EmptyQueue({ code, canAdd }: { code: string; canAdd: boolean }) {
   );
 }
 
-function People({ code, eventId, meId }: { code: string; eventId: string; meId: string | null }) {
+function People({ code, eventId, meId, growth = false }: { code: string; eventId: string; meId: string | null; growth?: boolean }) {
   const { data } = useLiveData<{ people: Person[] }>(`/api/e/${code}/people`, eventId);
   const [q, setQ] = useState("");
   if (!data) return <p className="py-10 text-center text-muted">Loading people…</p>;
@@ -376,6 +378,7 @@ function People({ code, eventId, meId }: { code: string; eventId: string; meId: 
   );
   return (
     <section className="flex flex-col gap-3">
+      {growth && meId && <TasteMatches code={code} />}
       <SectionTitle right={`${data.people.length} guests`}>Who&apos;s here</SectionTitle>
       <input className="field" placeholder="Search people or songs" value={q} onChange={(e) => setQ(e.target.value)} type="search" />
       <ul className="flex flex-col gap-2">
@@ -421,6 +424,39 @@ function People({ code, eventId, meId }: { code: string; eventId: string; meId: 
   );
 }
 
+type Match = PersonRef & { shared: number; example: string | null };
+
+/** "People who share your taste": guests who picked or hearted the same songs. */
+function TasteMatches({ code }: { code: string }) {
+  const [matches, setMatches] = useState<Match[] | null>(null);
+  useEffect(() => {
+    apiFetch<{ matches: Match[] }>(`/api/e/${code}/taste`)
+      .then((r) => setMatches(r.matches))
+      .catch(() => setMatches([]));
+  }, [code]);
+  if (!matches || matches.length === 0) return null;
+  return (
+    <section className="glass rounded-2xl p-3" aria-labelledby="taste-title">
+      <h2 id="taste-title" className="text-xs font-bold tracking-[0.25em] text-muted uppercase">People who share your taste</h2>
+      <ul className="mt-2 flex flex-col gap-2">
+        {matches.map((p) => (
+          <li key={p.id} className="flex items-center gap-3">
+            <Avatar person={p} size={40} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{p.displayName}</p>
+              <InstagramLink username={p.instagram} className="truncate text-xs" />
+            </div>
+            <span className="shrink-0 text-right text-xs text-muted">
+              {p.shared} song{p.shared === 1 ? "" : "s"} in common
+              {p.example && <span className="block max-w-32 truncate">like {p.example}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 const REPORT_REASONS = ["Fake or impersonating someone", "Offensive name or photo", "Spamming requests", "Something else"];
 
 /** Guests report someone to the host (rate limited on the server). */
@@ -441,7 +477,7 @@ function ReportButton({ code, person }: { code: string; person: Person }) {
   if (sent) return <span>Reported</span>;
   return (
     <span className="relative">
-      <button className="min-h-8 underline-offset-2 hover:text-white hover:underline" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+      <button className="tap underline-offset-2 hover:text-white hover:underline" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`Report @${person.instagram}`}>
         Report
       </button>
       {open && (
@@ -541,7 +577,7 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-bold">{me.displayName}</p>
             <InstagramLink username={me.instagram} />
-            <button className="mt-1 block text-xs text-muted hover:text-white" onClick={() => setEditing(true)}>Edit profile</button>
+            <button className="tap -ml-1 px-1 text-xs text-muted underline-offset-2 hover:text-white hover:underline" onClick={() => setEditing(true)}>Edit profile</button>
           </div>
         )}
       </div>
@@ -561,7 +597,7 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
                   {s.status === "pending" ? (
                     <>
                       <p className="font-bold text-cyan">⏳ Pending</p>
-                      <button className="mt-1 min-h-8 text-muted underline hover:text-white" onClick={() => withdraw(s.id)}>
+                      <button className="tap text-muted underline hover:text-white" onClick={() => withdraw(s.id)} aria-label={`Remove ${s.title}`}>
                         remove
                       </button>
                     </>
@@ -594,7 +630,7 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
                   </p>
                   <p className="text-muted">♥ {s.votes}</p>
                   {s.status === "queued" && (
-                    <button className="mt-1 text-muted underline hover:text-white" onClick={() => withdraw(s.id)}>
+                    <button className="tap mt-1 text-muted underline hover:text-white" onClick={() => withdraw(s.id)} aria-label={`Remove ${s.title}`}>
                       remove
                     </button>
                   )}
@@ -617,7 +653,7 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
       >
         Invite friends to this party
       </button>
-      <Link href={`/e/${code}/replay`} className="text-center text-sm text-muted underline">
+      <Link href={`/e/${code}/replay`} className="tap text-center text-sm text-muted underline">
         Preview the party replay playlist
       </Link>
       <div className="mt-4 flex flex-col items-center gap-2 border-t border-line pt-4 text-center text-xs text-muted">
@@ -625,16 +661,16 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
           <>
             <p>Delete your profile, photo, hearts and song picks from this party? This can&apos;t be undone.</p>
             <div className="flex gap-2">
-              <button className="btn btn-danger px-4 py-2 text-xs" onClick={leave}>Yes, delete my info</button>
-              <button className="btn btn-ghost px-4 py-2 text-xs" onClick={() => setConfirmLeave(false)}>Cancel</button>
+              <button className="btn btn-danger min-h-11 px-4 py-2 text-xs" onClick={leave}>Yes, delete my info</button>
+              <button className="btn btn-ghost min-h-11 px-4 py-2 text-xs" onClick={() => setConfirmLeave(false)}>Cancel</button>
             </div>
           </>
         ) : (
-          <button className="underline-offset-4 hover:text-white hover:underline" onClick={() => setConfirmLeave(true)}>
+          <button className="tap underline-offset-4 hover:text-white hover:underline" onClick={() => setConfirmLeave(true)}>
             Leave party and delete my info
           </button>
         )}
-        <Link href="/privacy" className="underline-offset-4 hover:text-white hover:underline">Privacy policy</Link>
+        <Link href="/privacy" className="tap underline-offset-4 hover:text-white hover:underline">Privacy policy</Link>
       </div>
     </section>
   );

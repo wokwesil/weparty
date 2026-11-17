@@ -35,7 +35,7 @@ export function InstagramLink({ username, className = "" }: { username: string; 
       href={`https://instagram.com/${encodeURIComponent(username)}`}
       target="_blank"
       rel="noopener noreferrer"
-      className={`font-semibold text-pink hover:underline ${className}`}
+      className={`tap-area font-semibold text-pink hover:underline ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
       @{username}

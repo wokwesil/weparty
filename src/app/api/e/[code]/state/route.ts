@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { flags } from "@/lib/flags";
 import { requireEventByCode } from "@/lib/services/events";
 import { toPerson } from "@/lib/services/guests";
 import { requireEventRole } from "@/lib/services/hosts";
@@ -28,5 +29,6 @@ export const GET = api(async (_req: Request, ctx: Ctx) => {
   return {
     ...snapshot,
     me: guest ? { ...toPerson(guest), ...activity, songsSubmitted: activity.mySongIds.length } : null,
+    growth: flags.growth,
   };
 });

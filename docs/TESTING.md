@@ -82,3 +82,11 @@ pressing Next song. It prints timings for every kind of request.
 - [ ] Search finds real songs on the live site (proves the Apple/iTunes search works from Vercel)
 - [ ] `/api/health` shows `"realtime":true` and the green dot appears in the queue header
 - [ ] If Apple Music is set up: host creates the live playlist and opens it in Offtrack
+
+## Growth + polish (all behind switches)
+
+- `tests/integration/growth.test.ts`: recap, taste matches, follow + unsubscribe, terms.
+- Full party test passes with every switch off and with `FEATURE_GROWTH` and
+  `FEATURE_TERMS` on.
+- Accessibility (`npm run test:a11y`): no serious WCAG 2.1 AA issues,
+  no tap targets under 44px. Details in docs/GROWTH.md.
