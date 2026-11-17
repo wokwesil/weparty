@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Artwork } from "@/components/Artwork";
 import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Wordmark } from "@/components/Brand";
+import { HostPlayer } from "./HostPlayer";
 import { shareLink } from "@/lib/native";
 import { Requester } from "@/components/SongCard";
 import { SongBrowser } from "@/components/SongBrowser";
@@ -245,6 +246,9 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
       {panel === "apple" && (
         <OfftrackPanel eventId={eventId} code={code} snapshot={s} livePlaylistId={data.liveApplePlaylistId} onChanged={refresh} />
       )}
+
+      {/* Built-in WeParty player (backup to Offtrack). Renders nothing unless FEATURE_HOST_PLAYER=1. */}
+      <HostPlayer eventId={eventId} snapshot={s} onChanged={refresh} />
 
       <AnimatePresence>
         {adding && (

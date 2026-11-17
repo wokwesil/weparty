@@ -14,6 +14,18 @@ type MusicKitInstance = {
   authorize: () => Promise<string>;
   unauthorize: () => Promise<void>;
   isAuthorized: boolean;
+  /** Playback (full songs need the signed-in person's own Apple Music subscription). */
+  setQueue: (opts: { song?: string; songs?: string[]; startPlaying?: boolean }) => Promise<unknown>;
+  play: () => Promise<void>;
+  pause: () => void;
+  stop: () => void;
+  seekToTime: (seconds: number) => Promise<void>;
+  playbackState: number;
+  currentPlaybackTime: number;
+  currentPlaybackDuration: number;
+  volume: number;
+  addEventListener: (name: string, cb: (e: { state?: number }) => void) => void;
+  removeEventListener: (name: string, cb: (e: { state?: number }) => void) => void;
   api: {
     music: (path: string, query?: Record<string, unknown>, opts?: { fetchOptions?: RequestInit }) => Promise<{ data: unknown }>;
   };
@@ -37,6 +49,21 @@ export async function isAppleMusicAvailable() {
   const res = await fetch("/api/music/token?check=1", { cache: "no-store" });
   return res.ok && Boolean(((await res.json()) as { available?: boolean }).available);
 }
+
+/**
+ * Whether the built-in host/DJ player is switched on (FEATURE_HOST_PLAYER=1 on the server)
+ * and Apple Music is connected. Website only, same as the other Apple Music features.
+ */
+export async function isHostPlayerEnabled() {
+  if (isNativeApp()) return false;
+  const res = await fetch("/api/music/token", { cache: "no-store" });
+  if (!res.ok) return false;
+  const body = (await res.json().catch(() => ({}))) as { hostPlayer?: boolean };
+  return body.hostPlayer === true;
+}
+
+/** MusicKit playback states (from Apple's MusicKit JS docs). */
+export const PlaybackState = { playing: 2, paused: 3, stopped: 4, ended: 5, completed: 10 } as const;
 
 export function getMusicKit(): Promise<MusicKitInstance> {
   if (loading) return loading;
