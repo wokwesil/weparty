@@ -1,86 +1,144 @@
 /**
- * Faded silhouettes of people dancing, drawn behind the home-page hero.
- * Pure SVG (no images to load), decorative only, and kept faint so the
- * title and tagline stay easy to read. Motion stops for people who ask
- * their phone for reduced motion (see globals.css).
+ * Faded party scene behind the home-page hero: a crowd of people with their
+ * hands up, backlit by stage lights, with confetti. Pure SVG drawn in code
+ * (no photo to license or download), decorative only, and kept faint so the
+ * title and tagline stay easy to read. The gentle sway stops for people who
+ * ask their phone for reduced motion (see globals.css).
  */
 
-type Pose = {
-  arms: string; // path for both arms, from the shoulders
-  legs: string; // path for both legs, from the hips
-  lean?: number; // body tilt in degrees
-};
+const W = 1200;
+const H = 420;
 
-// Each figure is drawn in a 100 x 220 box: head at (50, 28), shoulders at y=58, hips at y=120.
-const POSES: Pose[] = [
-  { arms: "M50 62 L22 22 M50 62 L80 20", legs: "M50 120 L34 200 M50 120 L68 198" }, // both hands up
-  { arms: "M50 62 L18 48 M50 62 L84 18", legs: "M50 120 L30 196 M50 120 L62 200" }, // one hand up
-  { arms: "M50 62 L28 92 L40 60 M50 62 L76 30 L88 8", legs: "M50 120 L40 200 M50 120 L76 190", lean: -6 },
-  { arms: "M50 62 L14 30 M50 62 L72 96", legs: "M50 120 L36 200 M50 120 L58 200", lean: 5 },
-  { arms: "M50 62 L30 28 L44 8 M50 62 L70 28 L56 8", legs: "M50 120 L26 194 M50 120 L74 194" }, // hands together overhead
-  { arms: "M50 62 L86 44 M50 62 L20 84", legs: "M50 120 L44 200 M50 120 L82 184", lean: 8 },
-];
+// Small deterministic random so the server and browser draw the same crowd.
+function rng(seed: number) {
+  return () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+}
 
-// x position (% of width), scale, pose, colour, animation delay (s)
-const CROWD: [number, number, number, string, number][] = [
-  [2, 0.8, 0, "var(--color-pink)", 0],
-  [11, 1.05, 3, "var(--color-violet)", -0.4],
-  [20, 0.85, 1, "var(--color-cyan)", -0.8],
-  [29, 1.15, 4, "var(--color-pink)", -0.2],
-  [38, 0.9, 2, "var(--color-violet)", -0.6],
-  [47, 1.2, 0, "var(--color-cyan)", -1],
-  [56, 0.95, 5, "var(--color-pink)", -0.3],
-  [65, 1.1, 1, "var(--color-violet)", -0.7],
-  [74, 0.85, 3, "var(--color-cyan)", -0.5],
-  [83, 1.05, 2, "var(--color-pink)", -0.9],
-  [92, 0.8, 4, "var(--color-violet)", -0.1],
-];
+type Person = { x: number; s: number; arms: [number, number][]; tilt: number; delay: number };
 
-function Dancer({ pose, color }: { pose: Pose; color: string }) {
+function makeRow(count: number, scale: number, seed: number): Person[] {
+  const r = rng(seed);
+  return Array.from({ length: count }, (_, i) => {
+    const x = ((i + 0.5) / count) * (W + 120) - 60 + (r() - 0.5) * 50;
+    const s = scale * (0.85 + r() * 0.3);
+    // Each arm: [side (-1 left, 1 right), how high: 0 = down, 1 = straight up]
+    const pick = r();
+    const arms: [number, number][] =
+      pick < 0.45 ? [[-1, 0.7 + r() * 0.3], [1, 0.7 + r() * 0.3]] : pick < 0.85 ? [[r() < 0.5 ? -1 : 1, 0.75 + r() * 0.25]] : [];
+    return { x, s, arms, tilt: (r() - 0.5) * 10, delay: -r() * 1.2 };
+  });
+}
+
+const BACK = makeRow(14, 0.72, 7);
+const FRONT = makeRow(10, 1, 42);
+
+function Silhouette({ p, fill }: { p: Person; fill: string }) {
+  const { x, s } = p;
+  const base = H + 10;
+  const shoulderY = base - 118 * s;
   return (
-    <svg viewBox="0 0 100 220" className="h-full w-full overflow-visible">
-      <g
-        transform={`rotate(${pose.lean ?? 0} 50 120)`}
-        stroke={color}
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="50" cy="28" r="15" fill={color} stroke="none" />
-        <path d="M50 50 L50 120" strokeWidth="24" />
-        <path d={pose.arms} strokeWidth="11" />
-        <path d={pose.legs} strokeWidth="14" />
+    <g
+      className="animate-dance"
+      style={{ transformBox: "fill-box", transformOrigin: "50% 100%", animationDelay: `${p.delay}s` }}
+    >
+      <g transform={`rotate(${p.tilt} ${x} ${base})`} fill={fill} stroke={fill} strokeLinecap="round" strokeLinejoin="round">
+        <ellipse cx={x} cy={base - 152 * s} rx={19 * s} ry={23 * s} stroke="none" />
+        <path
+          stroke="none"
+          d={`M${x - 52 * s} ${base} L${x - 48 * s} ${shoulderY + 12 * s} Q${x - 44 * s} ${shoulderY - 6 * s} ${x - 20 * s} ${shoulderY - 10 * s}
+              L${x + 20 * s} ${shoulderY - 10 * s} Q${x + 44 * s} ${shoulderY - 6 * s} ${x + 48 * s} ${shoulderY + 12 * s} L${x + 52 * s} ${base} Z`}
+        />
+        {p.arms.map(([side, up], i) => {
+          const sx = x + side * 40 * s;
+          const sy = shoulderY;
+          const ex = sx + side * (34 - 14 * up) * s;
+          const ey = sy - 70 * up * s;
+          const hx = ex + side * (18 - 30 * up) * s;
+          const hy = ey - 72 * up * s;
+          return (
+            <g key={i}>
+              <path d={`M${sx} ${sy} L${ex} ${ey} L${hx} ${hy}`} fill="none" strokeWidth={17 * s} />
+              <circle cx={hx} cy={hy - 6 * s} r={11 * s} stroke="none" />
+            </g>
+          );
+        })}
       </g>
-    </svg>
+    </g>
   );
 }
+
+const LIGHTS = [
+  { x: 140, c: "#ff2e88", r: 260 },
+  { x: 430, c: "#8b5cf6", r: 220 },
+  { x: 760, c: "#ff3b3b", r: 240 },
+  { x: 1060, c: "#22d3ee", r: 230 },
+];
+
+const CONFETTI = (() => {
+  const r = rng(99);
+  const colors = ["#ff2e88", "#22d3ee", "#b6f35c", "#ffffff", "#8b5cf6", "#ffd166"];
+  return Array.from({ length: 70 }, () => ({
+    x: r() * W,
+    y: r() * H * 0.75,
+    w: 3 + r() * 6,
+    h: 2 + r() * 3,
+    rot: r() * 180,
+    c: colors[Math.floor(r() * colors.length)],
+  }));
+})();
+
+// Soft edges on every side so the scene melts into the page.
+const FADE_Y = "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)";
+const FADE_X = "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)";
 
 export function DancingCrowd({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden ${className}`}
+      className={`pointer-events-none absolute overflow-hidden ${className}`}
       aria-hidden
-      style={{
-        maskImage: "linear-gradient(to top, transparent 0%, black 35%, black 70%, transparent 100%)",
-        WebkitMaskImage: "linear-gradient(to top, transparent 0%, black 35%, black 70%, transparent 100%)",
-      }}
+      style={{ maskImage: FADE_X, WebkitMaskImage: FADE_X }}
     >
-      {CROWD.map(([x, scale, pose, color, delay], i) => (
-        <div
-          key={i}
-          className="absolute bottom-0 origin-bottom animate-dance"
-          style={{
-            left: `${x}%`,
-            width: `${8 * scale}%`,
-            height: `${78 * scale}%`,
-            animationDelay: `${delay}s`,
-            animationDuration: `${1 + (i % 3) * 0.15}s`,
-            filter: "blur(1.5px)",
-          }}
-        >
-          <Dancer pose={POSES[pose]} color={color} />
-        </div>
-      ))}
+      <div className="h-full w-full" style={{ maskImage: FADE_Y, WebkitMaskImage: FADE_Y }}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" className="h-full w-full">
+        <defs>
+          {LIGHTS.map((l, i) => (
+            <radialGradient key={i} id={`wp-light-${i}`}>
+              <stop offset="0%" stopColor={l.c} stopOpacity="0.95" />
+              <stop offset="35%" stopColor={l.c} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={l.c} stopOpacity="0" />
+            </radialGradient>
+          ))}
+          <linearGradient id="wp-beam" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* Stage lights and beams */}
+        {LIGHTS.map((l, i) => (
+          <circle key={i} cx={l.x} cy={70} r={l.r} fill={`url(#wp-light-${i})`} />
+        ))}
+        {LIGHTS.map((l, i) => (
+          <polygon key={`b${i}`} points={`${l.x - 6},60 ${l.x + 6},60 ${l.x + 150 - i * 90},${H} ${l.x - 30 - i * 40},${H}`} fill="url(#wp-beam)" opacity="0.5" />
+        ))}
+
+        {/* Confetti */}
+        {CONFETTI.map((c, i) => (
+          <rect key={`c${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill={c.c} opacity="0.85" transform={`rotate(${c.rot} ${c.x} ${c.y})`} />
+        ))}
+
+        {/* Crowd: a hazier back row, then a darker front row */}
+        {BACK.map((p, i) => (
+          <Silhouette key={`k${i}`} p={p} fill="#1c0f22" />
+        ))}
+        {FRONT.map((p, i) => (
+          <Silhouette key={`f${i}`} p={p} fill="#050308" />
+        ))}
+      </svg>
+      </div>
     </div>
   );
 }
