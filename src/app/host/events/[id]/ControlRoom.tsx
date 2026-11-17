@@ -15,6 +15,7 @@ import { apiFetch, formatDuration } from "@/lib/client";
 import type { PartySettings } from "@/lib/ranking";
 import type { QueueSnapshot, Song, SongView } from "@/lib/types";
 import { useLiveData } from "@/lib/useLive";
+import { HostPlayer } from "./HostPlayer";
 import { OfftrackPanel } from "./OfftrackPanel";
 
 type HostState = {
@@ -116,6 +117,8 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
           🎧 This event has ended. Open YOUR WEPARTY REPLAY →
         </Link>
       )}
+
+      <HostPlayer eventId={eventId} snapshot={s} onChanged={refresh} />
 
       <nav className="no-scrollbar my-4 flex gap-1 overflow-x-auto" role="tablist">
         {([
