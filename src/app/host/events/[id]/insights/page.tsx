@@ -6,6 +6,9 @@ import { Backdrop, Wordmark } from "@/components/Brand";
 import { sql } from "@/lib/db";
 import { getEventById } from "@/lib/services/events";
 import { getFunnel } from "@/lib/services/dj";
+import { eventEarnings } from "@/lib/services/payments";
+import { flags } from "@/lib/flags";
+import { formatMoney } from "@/lib/payments/config";
 import { listPeople } from "@/lib/services/guests";
 import { requireEventRole } from "@/lib/services/hosts";
 import { getReplay, getTimeline } from "@/lib/services/queue";
@@ -35,6 +38,7 @@ export default async function Insights({ params }: Props) {
         (select count(distinct guest_id)::int from votes where event_id = ${id}) as voters`,
     getFunnel(id),
   ]);
+  const earnings = flags.payments ? await eventEarnings(id) : null;
   if (!replay) notFound();
   const c = counts[0];
   const replayUrl = `${await eventJoinUrl(event.code)}/replay`;
@@ -71,6 +75,25 @@ export default async function Insights({ params }: Props) {
         {stat(c.removed, "removed")}
       </section>
 
+      {earnings && (
+        <section className="mt-6 glass rounded-3xl p-5">
+          <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">Tips &amp; boosts</h2>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <div>
+              <p className="font-display text-2xl font-bold">{formatMoney(earnings.tips)}</p>
+              <p className="text-xs text-muted">{earnings.tip_count} tips</p>
+            </div>
+            <div>
+              <p className="font-display text-2xl font-bold">{formatMoney(earnings.boosts)}</p>
+              <p className="text-xs text-muted">{earnings.boost_count} boosts</p>
+            </div>
+            <div>
+              <p className="font-display text-2xl font-bold">{formatMoney(earnings.tips + earnings.boosts - earnings.fees)}</p>
+              <p className="text-xs text-muted">to you, after the {earnings.feePercent}% We Party fee and before Stripe&apos;s card fees</p>
+            </div>
+          </div>
+        </section>
+      )}
       <section className="mt-6 glass rounded-3xl p-5">
         <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">Join drop-off (QR scan to in the party)</h2>
         {funnel.steps[0].count === 0 ? (

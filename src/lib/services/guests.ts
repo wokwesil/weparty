@@ -6,6 +6,7 @@ import { normalizeInstagram, randomToken, sha256 } from "../security";
 import type { PersonRef } from "../types";
 import { logEvent, type EventRow } from "./events";
 import { requireEventRole } from "./hosts";
+import { planForEvent } from "./payments";
 
 export type GuestRow = {
   id: string;
@@ -31,6 +32,14 @@ export async function registerGuest(event: EventRow, input: { displayName: strin
   const ig = normalizeInstagram(input.instagram);
   if (!ig) throw badRequest("That Instagram username doesn't look right. Use letters, numbers, dots and underscores.");
   const displayName = input.displayName.trim().replace(/\s+/g, " ").slice(0, 60) || ig;
+  // Plan guest limits (only when paid plans are switched on).
+  const plan = await planForEvent(event);
+  if (plan?.limits.guestsPerEvent) {
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from guests where event_id = ${event.id}`;
+    if (n >= plan.limits.guestsPerEvent) {
+      throw badRequest("This party is full right now. Ask the host to upgrade so more guests can join.", "party_full");
+    }
+  }
   const token = randomToken();
   const rows = await sql<GuestRow[]>`
     insert into guests (event_id, token_hash, display_name, instagram_username)

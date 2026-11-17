@@ -7,6 +7,9 @@ import { Artwork } from "@/components/Artwork";
 import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Backdrop, Equalizer, Wordmark } from "@/components/Brand";
 import { DjSpotlight } from "@/components/DjSpotlight";
+import { PaySheet } from "@/components/PaySheet";
+import { SponsorBanner } from "@/components/SponsorBanner";
+import { WebOnly } from "@/components/WebOnly";
 import { NowPlaying, SongCard } from "@/components/SongCard";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { apiFetch, resizeImage } from "@/lib/client";
@@ -15,7 +18,8 @@ import { supportMailto } from "@/lib/site";
 import type { GuestMe, QueueSnapshot, SongView } from "@/lib/types";
 import { useLiveData, type LiveStatus } from "@/lib/useLive";
 
-type State = QueueSnapshot & { me: GuestMe | null };
+type Payments = { boosts: boolean; tips: boolean; boostTiers: number[]; tipAmounts: number[]; inNativeApp: boolean } | null;
+type State = QueueSnapshot & { me: GuestMe | null; payments?: Payments };
 type Person = {
   id: string;
   displayName: string;
@@ -45,9 +49,23 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
   });
 
   const added = search.get("added");
+  const paid = search.get("paid");
   const pendingAdded = Number(search.get("pending") ?? 0);
   const shown = useRef(false);
+  const [tipOpen, setTipOpen] = useState(false);
   useEffect(() => {
+    if (paid && !shown.current) {
+      shown.current = true;
+      toast(
+        paid === "boost"
+          ? "⚡ Boost paid! Your song moves up as soon as payment confirms."
+          : paid === "tip"
+            ? "💸 Thank you! Your tip is on its way to the DJ."
+            : "Payment cancelled. Nothing was charged.",
+        paid === "cancelled" ? "info" : "success",
+      );
+      router.replace(`/e/${code}/party`);
+    }
     if (added && !shown.current) {
       shown.current = true;
       toast(
@@ -58,7 +76,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
       );
       router.replace(`/e/${code}/party`);
     }
-  }, [added, pendingAdded, code, router, toast]);
+  }, [added, paid, pendingAdded, code, router, toast]);
 
   const voted = useMemo(() => new Set(data?.me?.votedIds ?? []), [data?.me?.votedIds]);
   const mine = useMemo(() => new Set(data?.me?.mySongIds ?? []), [data?.me?.mySongIds]);
@@ -139,9 +157,34 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
         </p>
       )}
       {data.event.dj && !ended && (
-        <div className="mb-3">
-          <DjSpotlight dj={data.event.dj} />
+        <div className="mb-3 flex items-stretch gap-2">
+          <div className="min-w-0 flex-1">
+            <DjSpotlight dj={data.event.dj} />
+          </div>
+          {data.payments?.tips && (
+            <WebOnly allowNative={data.payments.inNativeApp}>
+              <button className="glass min-h-11 rounded-2xl px-4 text-sm font-bold" onClick={() => setTipOpen(true)}>
+                💸 Tip
+              </button>
+            </WebOnly>
+          )}
         </div>
+      )}
+      {data.event.sponsor && (
+        <div className="mb-3">
+          <SponsorBanner sponsor={data.event.sponsor} />
+        </div>
+      )}
+      {data.payments?.tips && (
+        <PaySheet
+          open={tipOpen}
+          onClose={() => setTipOpen(false)}
+          code={code}
+          kind="tip"
+          amounts={data.payments.tipAmounts}
+          title={data.event.dj ? `Tip DJ ${data.event.dj.name}` : "Tip the DJ"}
+          onError={(m) => toast(m, "error")}
+        />
       )}
       <ShoutoutBanner shoutout={data.shoutout} />
       {ended && (
@@ -475,6 +518,7 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
   const [ig, setIg] = useState(me.instagram);
   const all = [...(data.nowPlaying ? [data.nowPlaying] : []), ...data.queue, ...data.history];
   const my = all.filter((s) => me.mySongIds.includes(s.id));
+  const [boost, setBoost] = useState<SongView | null>(null);
 
   const uploadPhoto = async (file: File | undefined) => {
     if (!file) return;
@@ -592,11 +636,20 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
                   <p className="font-bold">
                     {s.status === "playing" ? "▶ Playing" : s.status === "played" ? "✓ Played" : `#${s.position}`}
                   </p>
-                  <p className="text-muted">♥ {s.votes}</p>
+                  <p className="text-muted">♥ {s.votes}{s.boostCents > 0 ? " · ⚡" : ""}</p>
                   {s.status === "queued" && (
-                    <button className="mt-1 text-muted underline hover:text-white" onClick={() => withdraw(s.id)}>
-                      remove
-                    </button>
+                    <span className="mt-1 flex justify-end gap-3">
+                      {data.payments?.boosts && (
+                        <WebOnly allowNative={data.payments.inNativeApp}>
+                          <button className="min-h-8 font-bold text-lime" onClick={() => setBoost(s)}>
+                            ⚡ Boost
+                          </button>
+                        </WebOnly>
+                      )}
+                      <button className="min-h-8 text-muted underline hover:text-white" onClick={() => withdraw(s.id)}>
+                        remove
+                      </button>
+                    </span>
                   )}
                 </div>
               </li>
@@ -604,6 +657,18 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
           </ul>
         )}
       </div>
+      {data.payments?.boosts && (
+        <PaySheet
+          open={Boolean(boost)}
+          onClose={() => setBoost(null)}
+          code={code}
+          kind="boost"
+          itemId={boost?.id}
+          amounts={data.payments.boostTiers}
+          title={boost ? `Boost “${boost.title}”` : "Boost"}
+          onError={(m) => toast(m, "error")}
+        />
+      )}
       <button
         className="btn btn-ghost w-full"
         onClick={async () => {

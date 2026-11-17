@@ -6,6 +6,7 @@ import { requireEventRole } from "@/lib/services/hosts";
 import { listBlocks, listReports } from "@/lib/services/dj";
 import { getEventLog, getSnapshot } from "@/lib/services/queue";
 import { sql } from "@/lib/db";
+import { flags } from "@/lib/flags";
 import { api, requireHostId } from "@/lib/session";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -39,5 +40,6 @@ export const GET = api(async (_req: Request, ctx: Ctx) => {
     blocks,
     reports,
     djPhotoUrl: djPhoto,
+    features: { sponsor: flags.sponsor, payments: flags.payments, plans: flags.plans },
   };
 });

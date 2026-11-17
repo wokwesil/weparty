@@ -2,10 +2,12 @@ import "server-only";
 import { sql } from "../db";
 import { badRequest, notFound } from "../errors";
 import { normalizeSettings, type PartySettings } from "../ranking";
+import { flags } from "../flags";
 import { notifyEventChanged } from "../realtime";
 import { randomEventCode } from "../security";
 import type { EventPublic } from "../types";
 import { requireEventRole, requireOrgRole } from "./hosts";
+import { assertPlanAllows, planForEvent } from "./payments";
 import { refillLock } from "./queue";
 
 export type EventRow = {
@@ -24,6 +26,7 @@ export type EventRow = {
   play_counter: number;
   version: number | string;
   dj_photo_version: number;
+  event_pass?: boolean;
   created_at: Date;
   ended_at: Date | null;
 };
@@ -53,6 +56,7 @@ export function toPublicEvent(e: EventRow): EventPublic {
             photoUrl: e.dj_photo_version > 0 ? `/api/e/${e.code}/dj-photo?v=${e.dj_photo_version}` : null,
           }
         : null,
+    sponsor: flags.sponsor && s.sponsorName ? { name: s.sponsorName, url: s.sponsorUrl || null } : null,
   };
 }
 
@@ -144,6 +148,10 @@ export async function updateSettings(hostId: string, eventId: string, patch: Par
     const [e] = await tx<EventRow[]>`select * from events where id = ${eventId} for update`;
     const prev = normalizeSettings(e.settings);
     const merged = normalizeSettings({ ...prev, ...patch });
+    // Paid-plan features (only enforced when plans are switched on).
+    const plan = await planForEvent(e);
+    if (merged.djMode && !prev.djMode) assertPlanAllows(plan, "djMode");
+    if (merged.sponsorName && merged.sponsorName !== prev.sponsorName) assertPlanAllows(plan, "sponsor");
     await tx`update events set settings = ${sql.json(merged)} where id = ${eventId}`;
     const updated = { ...e, settings: merged };
     // Explicit filter switched on: take explicit songs that haven't played out of the queue.

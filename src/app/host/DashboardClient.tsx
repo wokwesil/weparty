@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { WebOnly } from "@/components/WebOnly";
 import { apiFetch } from "@/lib/client";
 
 export function HostHeaderActions() {
@@ -170,5 +171,86 @@ export function DeleteAccount() {
         </button>
       </div>
     </form>
+  );
+}
+
+type OrgMoneyView = { orgId: string; orgName: string; planName: string; planStatus: string | null; hasBilling: boolean; payoutsStarted: boolean; payoutsEnabled: boolean };
+
+/** Plan + payouts panel. Only rendered when FEATURE_PLANS or FEATURE_PAYMENTS is on. Hidden inside the native apps (docs/PAYMENTS.md). */
+export function MoneyPanel({ money }: { money: { plans: boolean; payments: boolean; orgs: OrgMoneyView[] } }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const go = async (key: string, fn: () => Promise<{ url?: string; payoutsEnabled?: boolean }>) => {
+    setBusy(key);
+    setMsg(null);
+    try {
+      const r = await fn();
+      if (r.url) {
+        window.location.href = r.url;
+        return;
+      }
+      if (r.payoutsEnabled !== undefined) setMsg(r.payoutsEnabled ? "Payouts are ready." : "Stripe still needs a few details. Tap Continue setup.");
+    } catch (e) {
+      setMsg((e as Error).message);
+    }
+    setBusy(null);
+  };
+  return (
+    <WebOnly fallback={<p className="glass rounded-3xl p-5 text-sm text-muted">Manage your plan and payouts on the We Party website.</p>}>
+      <div className="glass flex flex-col gap-4 rounded-3xl p-5">
+        <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">Plan &amp; payouts</h2>
+        {money.orgs.map((o) => (
+          <div key={o.orgId} className="flex flex-col gap-2">
+            {money.orgs.length > 1 && <p className="text-sm font-semibold">{o.orgName}</p>}
+            {money.plans && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm">
+                  Plan: <strong>{o.planName}</strong>
+                  {o.planStatus && o.planStatus !== "active" ? ` (${o.planStatus.replace("_", " ")})` : ""}
+                </span>
+                <a href="/pricing" className="btn btn-ghost ml-auto min-h-11 px-3 py-1.5 text-xs">Upgrade</a>
+                {o.hasBilling && (
+                  <button
+                    className="btn btn-ghost min-h-11 px-3 py-1.5 text-xs"
+                    disabled={busy !== null}
+                    onClick={() => go(`portal-${o.orgId}`, () => apiFetch("/api/host/billing", { method: "POST", json: { orgId: o.orgId, action: "portal" } }))}
+                  >
+                    Manage billing
+                  </button>
+                )}
+              </div>
+            )}
+            {money.payments && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm">
+                  Tips &amp; boosts payouts:{" "}
+                  <strong className={o.payoutsEnabled ? "text-lime" : ""}>{o.payoutsEnabled ? "Ready" : o.payoutsStarted ? "Setup not finished" : "Not set up"}</strong>
+                </span>
+                {!o.payoutsEnabled && (
+                  <button
+                    className="btn btn-primary ml-auto min-h-11 px-3 py-1.5 text-xs"
+                    disabled={busy !== null}
+                    onClick={() => go(`pay-${o.orgId}`, () => apiFetch(`/api/host/orgs/${o.orgId}/payouts`, { method: "POST" }))}
+                  >
+                    {o.payoutsStarted ? "Continue setup" : "Set up payouts"}
+                  </button>
+                )}
+                {o.payoutsStarted && (
+                  <button
+                    className="btn btn-ghost min-h-11 px-3 py-1.5 text-xs"
+                    disabled={busy !== null}
+                    onClick={() => go(`chk-${o.orgId}`, () => apiFetch(`/api/host/orgs/${o.orgId}/payouts`))}
+                  >
+                    Check status
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        {money.payments && <p className="text-xs text-muted">Guests pay on Stripe&apos;s secure page. We Party never sees card numbers.</p>}
+        {msg && <p className="text-xs text-muted" role="status">{msg}</p>}
+      </div>
+    </WebOnly>
   );
 }

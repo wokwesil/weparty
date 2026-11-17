@@ -3,6 +3,7 @@ import type postgres from "postgres";
 import { sql } from "../db";
 import { badRequest, forbidden, notFound } from "../errors";
 import { blockMatch, type BlockEntry } from "../blocklist";
+import { boostPoints } from "../payments/config";
 import { normalizeSettings, rankQueue } from "../ranking";
 import { notifyEventChanged } from "../realtime";
 import type { PersonRef, QueueSnapshot, Shoutout, Song, SongView } from "../types";
@@ -26,6 +27,7 @@ type ItemRow = {
   preview_url: string | null;
   explicit: boolean;
   genre: string | null;
+  boost_cents: number;
   submitted_by: string | null;
   added_by_host: boolean;
   status: SongView["status"];
@@ -102,7 +104,13 @@ export async function rankedQueue(tx: Tx, event: EventRow) {
       select submitted_by from queue_items where event_id = ${event.id} and status = 'playing'`,
   ]);
   return rankQueue(
-    items.map((i) => ({ ...i, submittedBy: i.submitted_by, createdAt: i.created_at.getTime(), pinnedRank: i.pinned_rank })),
+    items.map((i) => ({
+      ...i,
+      submittedBy: i.submitted_by,
+      createdAt: i.created_at.getTime(),
+      pinnedRank: i.pinned_rank,
+      boostPoints: boostPoints(i.boost_cents ?? 0),
+    })),
     { settings: normalizeSettings(event.settings), playedByGuest: played, nowPlayingBy: playing[0]?.submitted_by ?? null },
   );
 }
@@ -176,6 +184,7 @@ async function buildSnapshot(event: EventRow): Promise<QueueSnapshot> {
     explicit: i.explicit,
     status: i.status,
     genre: i.genre,
+    boostCents: i.boost_cents ?? 0,
     locked: Boolean(extra.pinned && extra.position && extra.position <= lockCount),
     votes: i.votes,
     requests: i.requests,

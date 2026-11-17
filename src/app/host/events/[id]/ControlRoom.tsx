@@ -29,6 +29,7 @@ type HostState = {
   blocks: Block[];
   reports: { id: number; guestId: string; reason: string; createdAt: string }[];
   djPhotoUrl: string | null;
+  features?: { sponsor: boolean; payments: boolean; plans: boolean };
 };
 
 type Details = { name: string; venueName: string; description: string; startsAt: string; replayAppleUrl: string };
@@ -159,7 +160,7 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
         <CrowdPulse eventId={eventId} version={`${s.stats.votes}:${s.stats.songs}:${s.stats.pending}`} act={act} />
       )}
       {panel === "dj" && (
-        <DjModePanel eventId={eventId} settings={data.settings} blocks={data.blocks} djPhotoUrl={data.djPhotoUrl} onSaved={refresh} />
+        <DjModePanel eventId={eventId} settings={data.settings} blocks={data.blocks} djPhotoUrl={data.djPhotoUrl} sponsorEnabled={Boolean(data.features?.sponsor)} onSaved={refresh} />
       )}
       {panel === "queue" && !dj && (
         <div className="grid gap-5 lg:grid-cols-[1fr_340px]">

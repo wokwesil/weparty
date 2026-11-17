@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { Backdrop, Wordmark } from "@/components/Brand";
+import { getOrgMoney } from "@/lib/services/billing";
 import { listHostEvents } from "@/lib/services/events";
 import { StatusPill } from "@/components/StatusPill";
 import { requireHostPage } from "./auth";
-import { DeleteAccount, HostHeaderActions, NewEventForm, TeamPanel } from "./DashboardClient";
+import { DeleteAccount, HostHeaderActions, MoneyPanel, NewEventForm, TeamPanel } from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Host dashboard" };
 
 export default async function HostDashboard() {
   const host = await requireHostPage();
-  const events = await listHostEvents(host.id);
+  const [events, money] = await Promise.all([listHostEvents(host.id), getOrgMoney(host.id)]);
   const live = events.filter((e) => e.status !== "ended");
   const past = events.filter((e) => e.status === "ended");
   const totals = events.reduce(
@@ -60,6 +61,7 @@ export default async function HostDashboard() {
               ))}
             </div>
           </div>
+          {money && money.orgs.length > 0 && <MoneyPanel money={money} />}
           <TeamPanel orgs={host.orgs} />
           <div className="flex flex-wrap gap-x-4 gap-y-2 px-1 text-xs text-muted">
             <Link href="/support" className="hover:text-white">Help &amp; support</Link>

@@ -13,6 +13,7 @@ export function Requester({ song, compact = false }: { song: SongView; compact?:
       <Avatar person={song.requester} size={compact ? 18 : 20} />
       <InstagramLink username={song.requester.instagram} className="truncate" />
       {others > 0 && <span className="shrink-0 text-muted">+{others}</span>}
+      {song.boostCents > 0 && <span className="shrink-0 rounded-full bg-lime/15 px-1.5 text-[10px] font-bold text-lime">⚡ Boosted</span>}
     </span>
   );
 }
