@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Backdrop, Equalizer, PoweredBy, Wordmark } from "@/components/Brand";
-import { DancingCrowd } from "@/components/DancingCrowd";
+import { PartyPhoto } from "@/components/PartyPhoto";
 import { JoinByCode } from "./JoinByCode";
 
 export default function Home() {
@@ -11,7 +11,7 @@ export default function Home() {
       <section className="flex w-full max-w-xl flex-col items-center text-center">
         <Equalizer className="mb-8 h-10" bars={7} />
         <div className="relative w-full px-2 pb-6 pt-24 sm:pt-28">
-          <DancingCrowd className="-inset-x-6 -top-6 bottom-0 opacity-50 sm:-inset-x-40" />
+          <PartyPhoto className="-inset-x-6 -top-6 bottom-0 opacity-60 sm:-inset-x-40" />
           <div className="relative">
             <h1>
               <Wordmark size="xl" />
