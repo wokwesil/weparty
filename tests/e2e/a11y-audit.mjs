@@ -103,7 +103,7 @@ try {
 
   await guests[0].goto(`${BASE}/e/${code}/replay`);
   await audit(guests[0], "Replay (guest)");
-  for (const p of ["/pricing", "/terms", "/privacy", "/support"]) {
+  for (const p of ["/terms", "/privacy", "/support"]) {
     const r = await host.goto(`${BASE}${p}`);
     if (r && r.status() === 200) await audit(host, p);
   }

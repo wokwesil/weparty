@@ -1,10 +1,10 @@
 # Growth and polish
 
-Two switches, both **off** by default. With them off, guests and hosts see exactly
-what they saw before. Turn them on in Vercel (Settings > Environment Variables),
-then redeploy. Run `supabase/migrations/0004_growth.sql` first (after 0003).
+Two switches in Vercel (Settings > Environment Variables; redeploy after changing).
+`FEATURE_GROWTH` is **on** unless set to `0`. `FEATURE_TERMS` is **off** unless set
+to `1` (turn it on after a lawyer reviews `/terms`). Run `supabase/migrations/0003_growth.sql` first (after 0002).
 
-## `FEATURE_GROWTH=1`
+## `FEATURE_GROWTH` (on by default)
 
 - **"Your night in music"** at the top of the replay, for guests who were at the
   party on that phone: songs picked and played, hearts received and given, their
@@ -27,7 +27,7 @@ then redeploy. Run `supabase/migrations/0004_growth.sql` first (after 0003).
 ## `FEATURE_TERMS=1`
 
 - `/terms`: plain-English host terms (music licensing, guest safety, follower
-  emails, payments, sponsors). **It's a draft for your lawyer to review; it is not
+  emails, price). **It's a draft for your lawyer to review; it is not
   legal advice.** The page says so at the top.
 - When creating an event, hosts must tick "I agree to the host terms". The
   server checks it too, and saves which version was accepted on the event
@@ -61,7 +61,6 @@ These change nothing about how features work; they make the app easier to use:
 | Home | 94 | 100 | 100 | 100 |
 | Join (QR landing) | 92 | 100 | 100 | 100 |
 | Replay | 94 | 100 | 100 | 100 |
-| Pricing | 92 to 93 | 100 | 100 | 100 |
 
 Re-check on the live site after deploying (Chrome DevTools > Lighthouse >
 Mobile); real numbers depend on Vercel's region and the phone's network.
