@@ -35,6 +35,8 @@ export type SongView = {
   explicit: boolean;
   status: "pending" | "queued" | "playing" | "played" | "skipped" | "removed" | "declined";
   genre: string | null;
+  /** Paid Song Boosts on this song, in cents (0 = not boosted). */
+  boostCents: number;
   /** True for the next songs the DJ has locked in place (hearts can't move them). */
   locked: boolean;
   votes: number;
@@ -67,7 +69,11 @@ export type EventPublic = {
   lockCount: number;
   /** DJ Spotlight, shown when DJ Mode is on and a DJ name is set. */
   dj: { name: string; instagram: string | null; photoUrl: string | null } | null;
+  /** "Presented by ___" (only when the sponsor feature is switched on). */
+  sponsor: Sponsor | null;
 };
+
+export type Sponsor = { name: string; url: string | null };
 
 export type Shoutout = { id: number; message: string; createdAt: string };
 

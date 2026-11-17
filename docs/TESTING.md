@@ -82,3 +82,17 @@ pressing Next song. It prints timings for every kind of request.
 - [ ] Search finds real songs on the live site (proves the Apple/iTunes search works from Vercel)
 - [ ] `/api/health` shows `"realtime":true` and the green dot appears in the queue header
 - [ ] If Apple Music is set up: host creates the live playlist and opens it in Offtrack
+
+## Payments (PR 2, all behind switches)
+
+- `tests/unit/payments-config.test.ts`: prices, fees, plan mapping, boost ranking.
+- `tests/integration/payments.test.ts`: uses a fake Stripe (no network, no money).
+  Covers: nothing shows while switched off; guests can't pay until the DJ's payouts
+  are set up; you can only boost your own song; a boost counts only after Stripe
+  confirms it, and only once if Stripe repeats the message; refunds remove the boost;
+  tips show in earnings; expired checkouts never count; plan limits (DJ Mode, 50-guest
+  cap on Free) apply only when `FEATURE_PLANS=1`; live Stripe keys are refused.
+- Full party test (51 checks) passes with every payment switch off, which is how
+  Nov 22 will run. `/pricing` returns "not found" while `FEATURE_PLANS` is off.
+- Checked with the switches on: pricing page, upgrade buttons and the dashboard's
+  "Plan & payouts" panel render with no browser errors.

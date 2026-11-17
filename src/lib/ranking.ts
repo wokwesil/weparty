@@ -42,6 +42,9 @@ export type PartySettings = {
   /** DJ Spotlight: shown on guest screens and the replay ("DJ ___ is spinning"). */
   djName: string;
   djInstagram: string;
+  /** Sponsor slot ("Presented by ___"); only shown when the sponsor feature is on. */
+  sponsorName: string;
+  sponsorUrl: string;
 };
 
 export const DEFAULT_SETTINGS: PartySettings = {
@@ -59,6 +62,8 @@ export const DEFAULT_SETTINGS: PartySettings = {
   lockCount: 0,
   djName: "",
   djInstagram: "",
+  sponsorName: "",
+  sponsorUrl: "",
 };
 
 export function normalizeSettings(raw: unknown): PartySettings {
@@ -69,7 +74,7 @@ export function normalizeSettings(raw: unknown): PartySettings {
   };
   const bool = (k: keyof PartySettings) =>
     typeof s[k] === "boolean" ? (s[k] as boolean) : (DEFAULT_SETTINGS[k] as boolean);
-  const text = (k: "djName" | "djInstagram", max: number) =>
+  const text = (k: "djName" | "djInstagram" | "sponsorName" | "sponsorUrl", max: number) =>
     typeof s[k] === "string" ? (s[k] as string).trim().replace(/\s+/g, " ").slice(0, max) : DEFAULT_SETTINGS[k];
   const ig = text("djInstagram", 60).toLowerCase().replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").split(/[/?#]/)[0];
   const minPicks = Math.round(num("minPicks", 1, 25));
@@ -89,6 +94,8 @@ export function normalizeSettings(raw: unknown): PartySettings {
     lockCount: Math.round(num("lockCount", 0, 5)),
     djName: text("djName", 60),
     djInstagram: /^[a-z0-9._]{1,30}$/.test(ig) ? ig : "",
+    sponsorName: text("sponsorName", 60),
+    sponsorUrl: /^https:\/\/[^\s]{3,300}$/.test(text("sponsorUrl", 300)) ? text("sponsorUrl", 300) : "",
   };
 }
 
@@ -100,6 +107,8 @@ export type RankInput = {
   votes: number;
   requests: number; // total number of guests who picked this song (>= 1 for guest songs)
   pinnedRank: number | null;
+  /** Extra points from paid Song Boosts (already converted from money). */
+  boostPoints?: number;
 };
 
 export type RankedItem<T extends RankInput = RankInput> = T & {
@@ -130,7 +139,7 @@ export function rankQueue<T extends RankInput>(
   const free = items.filter((i) => i.pinnedRank === null);
 
   const baseScore = (i: T) =>
-    i.votes * settings.heartWeight + Math.max(0, i.requests - 1) * settings.requestWeight;
+    i.votes * settings.heartWeight + Math.max(0, i.requests - 1) * settings.requestWeight + (i.boostPoints ?? 0);
 
   // Turn numbers per requester.
   const byGuest = new Map<string, T[]>();

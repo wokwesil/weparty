@@ -6,7 +6,7 @@ import { api } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 /** The newest database update this version of the app needs. */
-const LATEST_MIGRATION = "0002_join_djmode_reliability";
+const LATEST_MIGRATION = "0003_payments";
 
 /** Quick check that the app and database are working. Shows no secrets. */
 export const GET = api(async () => {

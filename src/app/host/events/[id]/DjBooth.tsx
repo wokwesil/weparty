@@ -110,7 +110,11 @@ export function DjBooth({
                       {song.explicit && <span className="ml-1 rounded bg-white/20 px-1 text-[10px] align-middle">E</span>}
                     </p>
                     <p className="truncate text-sm text-white/70">{song.artist}</p>
-                    <p className="text-xs text-pink">♥ {song.votes}{song.requests > 1 ? ` · ${song.requests} requests` : ""}</p>
+                    <p className="text-xs text-pink">
+                      ♥ {song.votes}
+                      {song.requests > 1 ? ` · ${song.requests} requests` : ""}
+                      {song.boostCents > 0 && <span className="ml-1 font-bold text-lime">⚡ Boosted ${(song.boostCents / 100).toFixed(0)}</span>}
+                    </p>
                   </div>
                   {!ended && (
                     <>
@@ -380,12 +384,14 @@ export function DjModePanel({
   settings,
   blocks,
   djPhotoUrl,
+  sponsorEnabled = false,
   onSaved,
 }: {
   eventId: string;
   settings: PartySettings;
   blocks: Block[];
   djPhotoUrl: string | null;
+  sponsorEnabled?: boolean;
   onSaved: () => void;
 }) {
   const toast = useToast();
@@ -497,8 +503,27 @@ export function DjModePanel({
           </button>
         </div>
         <BlocklistEditor eventId={eventId} blocks={blocks} onChanged={onSaved} />
+        {sponsorEnabled && <SponsorEditor settings={settings} save={save} />}
       </div>
     </section>
+  );
+}
+
+function SponsorEditor({ settings, save }: { settings: PartySettings; save: (p: Partial<PartySettings>, msg?: string) => Promise<void> }) {
+  const [name, setName] = useState(settings.sponsorName);
+  const [url, setUrl] = useState(settings.sponsorUrl);
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+      <p className="text-base font-bold text-white">Sponsor slot</p>
+      <p className="text-sm text-white/60">Shows “Presented by ___” on the party screen and the replay. Leave empty for none.</p>
+      <div className="mt-3 flex flex-col gap-2">
+        <input className="field py-2.5" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sponsor name" maxLength={60} aria-label="Sponsor name" />
+        <input className="field py-2.5" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://sponsor-website (optional)" aria-label="Sponsor link" />
+        <button className="btn btn-primary" onClick={() => save({ sponsorName: name, sponsorUrl: url }, name ? "Sponsor saved" : "Sponsor removed")}>
+          Save sponsor
+        </button>
+      </div>
+    </div>
   );
 }
 

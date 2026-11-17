@@ -2,7 +2,7 @@
   "name": "weparty",
   "version": "0.1.0",
   "private": true,
-  "description": "WeParty \u2014 Where We All Control the Vibes. Powered by Offtrack.",
+  "description": "WeParty — Where We All Control the Vibes. Powered by Offtrack.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -41,6 +41,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "server-only": "^0.0.1",
+    "stripe": "23.1.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
