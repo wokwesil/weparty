@@ -4,12 +4,12 @@ Offtrack is still the main way music plays at a WeParty party (see OFFTRACK.md).
 The WeParty player is a backup: it plays the crowd's queue straight from the
 host/DJ control room, using the host's own Apple Music.
 
-It is **off** unless `FEATURE_HOST_PLAYER=1` is set in Vercel.
+It turns **on by itself** once the Apple Music key is in Vercel. To hide it, set `FEATURE_HOST_PLAYER=0`.
 
 ## What it needs
 
 1. The Apple Music key is set up (APPLE_MUSIC.md: Apple Developer Program, $99/year).
-2. `FEATURE_HOST_PLAYER=1` in Vercel, then redeploy.
+2. (Nothing else to switch on. `/api/health` shows `"hostPlayer":true` and `"appleMusicKeyWorks":true`.)
 3. The person running the player has a **paid Apple Music subscription** and signs in on Apple's own screen.
    Guests don't need Apple Music for this.
 4. A **web browser** (Safari or Chrome) on a laptop or iPad connected to the speakers.
@@ -43,10 +43,10 @@ before using any streaming service at paid events.
 `tests/e2e/host-player.mjs` runs the player against a fake Apple MusicKit
 (no Apple account needed): it checks the top song starts, the queue moves on when
 a song ends (only once), the player follows a manual Next song, and it stops when
-the queue is empty. Start the app with `WEPARTY_TEST_CATALOG=1`,
-`FEATURE_HOST_PLAYER=1` and any test `APPLE_*` key (for example one made with
+the queue is empty. Start the app with `WEPARTY_TEST_CATALOG=1`
+and any test `APPLE_*` key (for example one made with
 `openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt`),
 then run `node tests/e2e/host-player.mjs`.
 
-Last result (Nov 17, 2026): 9 of 9 checks passed; main party test 30 of 30.
+Last result (Nov 18, 2026, player on by default, no flag set): 9 of 9 checks passed; main party test 56 of 56.
 Not yet tested with a real Apple Music account (waiting on the Apple Developer key).
