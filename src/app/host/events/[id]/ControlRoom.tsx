@@ -247,7 +247,7 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
         <OfftrackPanel eventId={eventId} code={code} snapshot={s} livePlaylistId={data.liveApplePlaylistId} onChanged={refresh} />
       )}
 
-      {/* Built-in WeParty player (backup to Offtrack). Renders nothing unless FEATURE_HOST_PLAYER=1. */}
+      {/* Built-in WeParty player (backup to Offtrack). Shows once the Apple Music key is set (FEATURE_HOST_PLAYER=0 hides it). */}
       <HostPlayer eventId={eventId} snapshot={s} onChanged={refresh} />
 
       <AnimatePresence>

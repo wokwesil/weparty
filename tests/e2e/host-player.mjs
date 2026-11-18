@@ -1,6 +1,6 @@
-// Browser test for the built-in host player (FEATURE_HOST_PLAYER=1), with a FAKE
+// Browser test for the built-in host player (on by default once Apple keys are set), with a FAKE
 // Apple MusicKit so it runs without a real Apple Music account.
-// Usage: start the app with WEPARTY_TEST_CATALOG=1, FEATURE_HOST_PLAYER=1 and any
+// Usage: start the app with WEPARTY_TEST_CATALOG=1 and any
 // APPLE_* test key (see docs/HOST_PLAYER.md), then
 //   BASE_URL=http://localhost:3000 node tests/e2e/host-player.mjs
 import { chromium } from "playwright";

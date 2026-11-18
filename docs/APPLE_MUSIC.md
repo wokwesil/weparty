@@ -18,6 +18,7 @@
 | Host creates the REPLAY playlist | host | host's library |
 | Host creates/updates the live Offtrack playlist | host | host's library |
 | Guest taps "Add to my Apple Music" on the replay page | that guest | that guest's own library |
+| **WeParty player**: control room plays the crowd's queue (HOST_PLAYER.md) | host/DJ | nothing (plays only) |
 
 Each person always signs in on Apple's own screen. WeParty never sees passwords.
 Host and guest permissions are separate: a guest's sign-in can only touch that
@@ -36,10 +37,13 @@ guest's library, and the host's sign-in only the host's.
 5. In Vercel add:
    - `APPLE_TEAM_ID`
    - `APPLE_KEY_ID`
-   - `APPLE_PRIVATE_KEY` (open the `.p8` in a text editor and paste all of it)
+   - `APPLE_PRIVATE_KEY` (open the `.p8` in a text editor and paste all of it;
+     WeParty also accepts it with `\n` instead of line breaks, or without the BEGIN/END lines)
    - `APPLE_MUSIC_STOREFRONT` = `us` (or your country code)
-6. Redeploy. `/api/health` should now say `"appleMusic":true`, and guests see a
-   "My Apple Music" tab when picking songs.
+6. Redeploy. `/api/health` should now say `"appleMusic":true` and
+   `"appleMusicKeyWorks":true` (WeParty asks Apple for one song to prove the key works;
+   if not, `"appleMusicProblem"` says what to fix). Guests see a "My Apple Music" tab
+   when picking songs, and the control room shows **▶ Play the queue here**.
 
 ## Limits (from Apple's official API)
 
