@@ -92,7 +92,7 @@ export default async function HostDashboard() {
           <div className="flex flex-wrap gap-x-4 gap-y-2 px-1 text-xs text-muted">
             <Link href="/support" className="tap hover:text-white">Help &amp; support</Link>
             <Link href="/privacy" className="tap hover:text-white">Privacy</Link>
-            {flags.terms && <Link href="/terms" className="tap hover:text-white">Host terms</Link>}
+            <Link href="/terms" className="tap hover:text-white">Terms &amp; Conditions</Link>
           </div>
           <DeleteAccount />
         </aside>

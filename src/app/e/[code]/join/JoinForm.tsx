@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 /* eslint-disable @next/next/no-img-element */
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -157,6 +158,7 @@ export function JoinForm({
             >
               Not you? Use a different profile
             </button>
+            <TermsNote />
           </div>
         </section>
       ) : (
@@ -218,6 +220,7 @@ export function JoinForm({
               One song is all it takes. Photo is optional and you can add it later. Your name, photo and handle are shown to
               guests at this party. We never log into your Instagram.
             </p>
+            <TermsNote />
           </div>
           {saved && (
             <button type="button" className="text-xs text-muted underline" onClick={() => { forgetProfile(); setSaved(null); }}>
@@ -227,5 +230,15 @@ export function JoinForm({
         </form>
       )}
     </main>
+  );
+}
+
+function TermsNote() {
+  return (
+    <p className="mt-2 text-center text-xs text-muted">
+      By joining you agree to the{" "}
+      <Link href="/terms" className="underline underline-offset-2 hover:text-white">Terms</Link> and{" "}
+      <Link href="/privacy" className="underline underline-offset-2 hover:text-white">Privacy policy</Link>.
+    </p>
   );
 }

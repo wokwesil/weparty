@@ -67,6 +67,13 @@ export function AuthForm({ mode, needsInvite }: { mode: "login" | "signup"; need
         <button className="btn btn-primary mt-2 py-3.5" disabled={busy}>
           {busy ? "One sec…" : mode === "login" ? "Sign in" : "Create account"}
         </button>
+        {mode === "signup" && (
+          <p className="text-center text-xs text-muted">
+            By creating an account you agree to the{" "}
+            <Link href="/terms" className="underline underline-offset-2 hover:text-white">Terms &amp; Conditions</Link> and{" "}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-white">Privacy policy</Link>.
+          </p>
+        )}
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         {mode === "login" ? (
