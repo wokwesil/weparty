@@ -4,6 +4,7 @@ import { flags } from "@/lib/flags";
 import { followerCount } from "@/lib/services/growth";
 import { listHostEvents } from "@/lib/services/events";
 import { StatusPill } from "@/components/StatusPill";
+import { isPlatformAdmin } from "@/lib/services/analytics";
 import { requireHostPage } from "./auth";
 import { DeleteAccount, HostHeaderActions, NewEventForm, TeamPanel } from "./DashboardClient";
 
@@ -19,6 +20,7 @@ export default async function HostDashboard() {
     (t, e) => ({ guests: t.guests + e.guests, songs: t.songs + e.songs, votes: t.votes + e.votes, played: t.played + e.played }),
     { guests: 0, songs: 0, votes: 0, played: 0 },
   );
+  const isOwner = await isPlatformAdmin(host.id);
   const adminOrgs = host.orgs.filter((o) => o.role !== "dj");
   const followers = flags.growth ? await Promise.all(adminOrgs.map(async (o) => ({ ...o, count: await followerCount(o.id) }))) : [];
 
@@ -29,6 +31,9 @@ export default async function HostDashboard() {
         <Link href="/" className="tap"><Wordmark size="sm" /></Link>
         <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">Host</span>
         <div className="ml-auto flex items-center gap-3 text-sm text-muted">
+          {isOwner && (
+            <Link href="/admin" className="btn btn-ghost min-h-11 px-3 py-1.5 text-xs">Site dashboard</Link>
+          )}
           <span className="hidden sm:inline">{host.displayName}</span>
           <HostHeaderActions />
         </div>
