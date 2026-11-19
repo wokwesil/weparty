@@ -192,7 +192,7 @@ export async function listFollowers(hostId: string, orgId: string) {
 /* ------------------------------------------------------------------------ */
 
 /** Bump this when the host terms text changes. */
-export const HOST_TERMS_VERSION = "2026-11-17";
+export const HOST_TERMS_VERSION = "2026-11-19";
 
 export async function recordTermsAccepted(eventId: string) {
   await sql`update events set terms_version = ${HOST_TERMS_VERSION}, terms_accepted_at = now() where id = ${eventId}`;

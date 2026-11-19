@@ -32,6 +32,7 @@ export default function Home() {
         <nav className="flex gap-4 text-xs text-muted">
           <Link href="/support" className="tap hover:text-white">Help</Link>
           <Link href="/privacy" className="tap hover:text-white">Privacy</Link>
+          <Link href="/terms" className="tap hover:text-white">Terms</Link>
         </nav>
       </footer>
     </main>

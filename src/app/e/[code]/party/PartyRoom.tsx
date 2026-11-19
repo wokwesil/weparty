@@ -671,6 +671,7 @@ function MyRequests({ code, data, onChanged }: { code: string; data: State; onCh
           </button>
         )}
         <Link href="/privacy" className="tap underline-offset-4 hover:text-white hover:underline">Privacy policy</Link>
+        <Link href="/terms" className="tap underline-offset-4 hover:text-white hover:underline">Terms</Link>
       </div>
     </section>
   );

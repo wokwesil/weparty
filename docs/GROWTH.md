@@ -26,16 +26,16 @@ to `1` (turn it on after a lawyer reviews `/terms`). Run `supabase/migrations/00
 
 ## `FEATURE_TERMS=1`
 
-- `/terms`: plain-English host terms (music licensing, guest safety, follower
-  emails, price). **It's a draft for your lawyer to review; it is not
-  legal advice.** The page says so at the top.
+- `/terms` is now always public (Terms & Conditions for guests and hosts,
+  linked from the footer, the join screen and host sign-up). Plain English,
+  not yet reviewed by a lawyer. This switch only adds the checkbox below.
 - When creating an event, hosts must tick "I agree to the host terms". The
   server checks it too, and saves which version was accepted on the event
   (`events.terms_version`, `events.terms_accepted_at`). When the text changes,
   bump `HOST_TERMS_VERSION` in `src/lib/services/growth.ts`.
 
-Turn this on only after your lawyer has reviewed `/terms` (you can preview it by
-switching it on in a Vercel Preview deployment first).
+Optional: the join and sign-up screens already say "By joining/creating an
+account you agree to the Terms".
 
 ## Polish (always on, no switch)
 
