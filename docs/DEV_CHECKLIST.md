@@ -59,7 +59,7 @@ Last updated: Nov 17, 2026
 ## Next up (after Nov 22)
 
 1. Verify Offtrack hand-off with the real app; adjust instructions.
-2. Host password reset by email (needs an email provider such as Resend or Supabase Auth).
+2. Host password reset: built (Forgot password + owner reset link on /admin). Emails need GMAIL_USER + GMAIL_APP_PASSWORD in Vercel (docs/PASSWORD_RESET.md).
 3. Venue branding (logo/colors on guest screens) using `organizations.branding`.
 4. Paid plans (Stripe) using `organizations.plan` / `billing_customer_id`.
 5. Optional: host plays full songs in the browser via MusicKit for parties without a DJ.

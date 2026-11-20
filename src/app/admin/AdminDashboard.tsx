@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Backdrop, Wordmark } from "@/components/Brand";
+import { apiFetch } from "@/lib/client";
 import type { Dashboard, Person } from "@/lib/services/analytics";
 
 const REFRESH_MS = 5_000;
@@ -177,7 +178,71 @@ function Body({ data, now }: { data: Dashboard; now: number }) {
           Someone counts as &quot;on the site now&quot; if their screen checked in during the last {data.liveSeconds} seconds.
         </p>
       </section>
+
+      <ResetLinkTool />
     </>
+  );
+}
+
+/** Owner tool: make a one-time password reset link for a host who is locked out. */
+function ResetLinkTool() {
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ link: string; name: string; email: string; emailReady: boolean } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const make = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    setCopied(false);
+    try {
+      setResult(await apiFetch("/api/admin/reset-link", { method: "POST", json: { email } }));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copy = async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(result.link);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <section className="mt-6 glass rounded-3xl p-5" aria-labelledby="reset-tool">
+      <h2 id="reset-tool" className="text-xs font-bold tracking-[0.3em] text-muted uppercase">Reset a host&apos;s password</h2>
+      <p className="mt-2 text-sm text-muted">
+        For a host who is locked out. Type their email, then text or DM them the link. It works once, for 1 hour.
+      </p>
+      <form onSubmit={make} className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <label className="sr-only" htmlFor="reset-email">Host email</label>
+        <input id="reset-email" className="field sm:max-w-sm" type="email" placeholder="host@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="off" />
+        <button className="btn btn-primary min-h-11 px-5" disabled={busy}>{busy ? "One sec…" : "Make reset link"}</button>
+      </form>
+      {error && <p className="mt-3 rounded-xl bg-rose-500/15 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p>}
+      {result && (
+        <div className="mt-4 rounded-2xl bg-white/5 p-4" role="status">
+          <p className="text-sm">Reset link for <strong>{result.name}</strong> ({result.email}):</p>
+          <p className="mt-2 break-all rounded-xl bg-black/30 px-3 py-2 font-mono text-xs">{result.link}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button type="button" className="btn btn-ghost min-h-11 px-4 text-sm" onClick={copy}>{copied ? "Copied" : "Copy link"}</button>
+            <span className="text-xs text-muted">Making a new link doesn&apos;t cancel this one. Both stop working once the password changes.</span>
+          </div>
+        </div>
+      )}
+      {result && !result.emailReady && (
+        <p className="mt-3 text-xs text-muted">Reset emails aren&apos;t switched on yet, so hosts can&apos;t do this themselves. See docs/PASSWORD_RESET.md.</p>
+      )}
+    </section>
   );
 }
 
