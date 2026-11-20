@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { AppError } from "@/lib/errors";
 import { rateLimit } from "@/lib/security";
-import { requestPasswordReset, resetBaseUrl } from "@/lib/services/passwordReset";
+import { emailConfigured, requestPasswordReset, resetBaseUrl } from "@/lib/services/passwordReset";
 import { api, assertSameOrigin, readJson } from "@/lib/session";
 
 /** Host asks for a password reset link. Always answers the same way. */
@@ -14,5 +14,6 @@ export const POST = api(async (req: Request) => {
     throw new AppError(429, "Too many reset requests. Wait 15 minutes.", "rate_limited");
   }
   if (email) await requestPasswordReset(email, resetBaseUrl(req));
-  return { ok: true };
+  // emailReady only says whether the site can send email at all, never whether this email has an account.
+  return { ok: true, emailReady: emailConfigured() };
 });

@@ -3,11 +3,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { Backdrop, PoweredBy, Wordmark } from "@/components/Brand";
 import { apiFetch } from "@/lib/client";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 export function ForgotForm() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<null | "emailed" | "no-email">(null);
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
@@ -15,8 +16,8 @@ export function ForgotForm() {
     setBusy(true);
     setError(null);
     try {
-      await apiFetch("/api/host/forgot", { method: "POST", json: { email } });
-      setSent(true);
+      const res = await apiFetch<{ emailReady?: boolean }>("/api/host/forgot", { method: "POST", json: { email } });
+      setSent(res?.emailReady === false ? "no-email" : "emailed");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -29,7 +30,16 @@ export function ForgotForm() {
       <Backdrop />
       <Link href="/" className="mb-8 text-center"><Wordmark /></Link>
       <h1 className="text-center font-display text-2xl font-bold">Forgot your password?</h1>
-      {sent ? (
+      {sent === "no-email" ? (
+        <p className="mt-6 rounded-xl bg-white/5 px-4 py-4 text-center text-sm" role="status">
+          Reset emails aren&apos;t switched on yet, so we couldn&apos;t email you.{" "}
+          {SUPPORT_EMAIL ? (
+            <>Email <a className="text-pink underline" href={`mailto:${SUPPORT_EMAIL}?subject=We%20Party%20password%20reset`}>{SUPPORT_EMAIL}</a> from <strong>{email}</strong> and we&apos;ll send you a reset link.</>
+          ) : (
+            <>Ask the We Party team for a reset link for <strong>{email}</strong>.</>
+          )}
+        </p>
+      ) : sent ? (
         <p className="mt-6 rounded-xl bg-white/5 px-4 py-4 text-center text-sm" role="status">
           If a host account uses <strong>{email}</strong>, we just sent it a link to choose a new password.
           It works for 1 hour. Check your spam folder too.

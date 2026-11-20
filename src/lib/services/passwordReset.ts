@@ -4,6 +4,9 @@ import { sql } from "../db";
 import { env, requireSessionSecret } from "../env";
 import { badRequest } from "../errors";
 import { hashPassword, sha256 } from "../security";
+import { emailConfigured, sendEmail } from "./mailer";
+
+export { emailConfigured };
 
 /**
  * "Forgot password" for hosts.
@@ -51,8 +54,14 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   return hostId;
 }
 
-export function emailConfigured() {
-  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+/** Makes a fresh reset link for a host email, or null if there is no such host. */
+export async function resetLinkForEmail(emailRaw: string, baseUrl: string) {
+  const email = emailRaw.trim().toLowerCase();
+  const [row] = await sql<{ id: string; password_hash: string; display_name: string; email: string }[]>`
+    select id, password_hash, display_name, email from hosts where lower(email) = ${email}`;
+  if (!row) return null;
+  const token = await createResetToken(row.id, row.password_hash);
+  return { link: `${baseUrl}/host/reset#${token}`, displayName: row.display_name, email: row.email };
 }
 
 /**
@@ -60,33 +69,22 @@ export function emailConfigured() {
  * account, so nobody can use this page to find out who hosts on WeParty.
  */
 export async function requestPasswordReset(emailRaw: string, baseUrl: string) {
-  const email = emailRaw.trim().toLowerCase();
-  const [row] = await sql<{ id: string; password_hash: string; display_name: string }[]>`
-    select id, password_hash, display_name from hosts where lower(email) = ${email}`;
-  if (!row) return;
-  const token = await createResetToken(row.id, row.password_hash);
-  const link = `${baseUrl}/host/reset#${token}`;
-
+  const found = await resetLinkForEmail(emailRaw, baseUrl);
+  if (!found) return;
   if (!emailConfigured()) {
-    // No email service yet. The site owner can find the link in Vercel > Logs.
-    console.warn(`[password-reset] Email is not set up (RESEND_API_KEY / EMAIL_FROM). Reset link for ${email}: ${link}`);
+    // No email service yet. The site owner can make a link on /admin instead.
+    console.warn(`[password-reset] Email is not set up, so no email was sent to ${found.email}. Make a link on /admin.`);
     return;
   }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM,
-      to: [email],
-      subject: "Reset your We Party password",
-      text:
-        `Hi ${row.display_name},\n\n` +
-        `Someone (hopefully you) asked to reset your We Party host password.\n\n` +
-        `Choose a new password here (this link works once, for ${RESET_MINUTES} minutes):\n${link}\n\n` +
-        `If you didn't ask for this, you can ignore this email. Your password won't change.`,
-    }),
+  await sendEmail({
+    to: found.email,
+    subject: "Reset your We Party password",
+    text:
+      `Hi ${found.displayName},\n\n` +
+      `Someone (hopefully you) asked to reset your We Party host password.\n\n` +
+      `Choose a new password here (this link works once, for ${RESET_MINUTES} minutes):\n${found.link}\n\n` +
+      `If you didn't ask for this, you can ignore this email. Your password won't change.`,
   });
-  if (!res.ok) console.error(`[password-reset] Email send failed (${res.status}): ${await res.text().catch(() => "")}`);
 }
 
 export function resetBaseUrl(req: Request) {
