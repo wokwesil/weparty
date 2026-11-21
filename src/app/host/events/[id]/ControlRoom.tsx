@@ -18,6 +18,7 @@ import type { QueueSnapshot, Song, SongView } from "@/lib/types";
 import { useLiveData } from "@/lib/useLive";
 import { CrowdPulse, DjBooth, DjModePanel, type Block } from "./DjBooth";
 import { OfftrackPanel } from "./OfftrackPanel";
+import { VibesPanel } from "./VibesPanel";
 
 type HostState = {
   role: "owner" | "admin" | "dj";
@@ -30,10 +31,11 @@ type HostState = {
   blocks: Block[];
   reports: { id: number; guestId: string; reason: string; createdAt: string }[];
   djPhotoUrl: string | null;
+  features?: { vibePricing: boolean };
 };
 
 type Details = { name: string; venueName: string; description: string; startsAt: string; replayAppleUrl: string };
-type Panel = "queue" | "pulse" | "dj" | "guests" | "settings" | "share" | "apple";
+type Panel = "queue" | "pulse" | "vibes" | "dj" | "guests" | "settings" | "share" | "apple";
 
 export function ControlRoom(props: { eventId: string; code: string; joinUrl: string; initial: Details; role: string }) {
   return (
@@ -136,6 +138,7 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
           [
             ["queue", dj ? `Booth${s.stats.pending ? ` (${s.stats.pending})` : ""}` : "Live queue"],
             ...(dj ? [["pulse", "Crowd Pulse"]] : []),
+            ["vibes", data.settings.vibes.length ? `Tonight's vibes (${data.settings.vibes.length})` : "Tonight's vibes"],
             ["dj", dj ? "DJ settings" : "DJ Mode"],
             ["guests", `Guests (${data.people.length})${data.reports.length ? ` · ⚠ ${new Set(data.reports.map((r) => r.guestId)).size}` : ""}`],
             ["settings", "Party shuffle settings"],
@@ -160,6 +163,9 @@ function Room({ eventId, code, joinUrl, initial }: { eventId: string; code: stri
       )}
       {panel === "pulse" && dj && (
         <CrowdPulse eventId={eventId} version={`${s.stats.votes}:${s.stats.songs}:${s.stats.pending}`} act={act} />
+      )}
+      {panel === "vibes" && (
+        <VibesPanel eventId={eventId} settings={data.settings} pricing={Boolean(data.features?.vibePricing)} onSaved={refresh} />
       )}
       {panel === "dj" && (
         <DjModePanel eventId={eventId} settings={data.settings} blocks={data.blocks} djPhotoUrl={data.djPhotoUrl} onSaved={refresh} />
@@ -486,7 +492,11 @@ function SettingsPanel({ eventId, settings, onSaved }: { eventId: string; settin
   const [s, setS] = useState(settings);
   const save = async () => {
     try {
-      const res = await apiFetch<{ settings: PartySettings }>(`/api/host/events/${eventId}/settings`, { method: "PATCH", json: s });
+      const res = await apiFetch<{ settings: PartySettings }>(`/api/host/events/${eventId}/settings`, {
+        method: "PATCH",
+        // Tonight's vibes are saved from their own tab: don't send a stale copy from here.
+        json: { ...s, vibes: undefined, vibesOnly: undefined, vibePrices: undefined },
+      });
       setS(res.settings);
       toast("Settings saved. The queue re-ranked.", "success");
       onSaved();

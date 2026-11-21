@@ -38,6 +38,7 @@ Last updated: Nov 17, 2026
 - [ ] **Apple Developer Program** ($99/yr) for Apple Music API, library browsing and playlist creation → APPLE_MUSIC.md
 - [ ] **App stores**: Apple Developer ($99/yr, same account as above) and Google Play Console ($25), plus `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel → APP_SETUP.md
 - [ ] **WeParty player (optional backup)**: after the Apple key, set `FEATURE_HOST_PLAYER=1` and test one real song end-to-end on a laptop → HOST_PLAYER.md
+- [x] **Tonight's vibes**: host picks vibes, guests request inside them (no setup needed). Per-vibe prices stay hidden/uncharged unless `FEATURE_VIBE_PRICING=1`, and even then nobody is charged → VIBES.md
 - [ ] **Offtrack**: confirm with the real app that a WeParty playlist in Apple Music opens and mixes; ask Offtrack about an API
 
 ## Tests passed

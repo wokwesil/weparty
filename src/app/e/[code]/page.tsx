@@ -54,6 +54,7 @@ export default async function EventWelcome({ params }: Props) {
       subtitle={[event.venue_name, date].filter(Boolean).join(" · ") || null}
       dj={pub.dj}
       submissionsOpen={pub.submissionsOpen}
+      vibes={pub.vibes}
     />
   );
 }
