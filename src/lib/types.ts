@@ -67,6 +67,10 @@ export type EventPublic = {
   lockCount: number;
   /** DJ Spotlight, shown when DJ Mode is on and a DJ name is set. */
   dj: { name: string; instagram: string | null; photoUrl: string | null } | null;
+  /** "What's the vibe tonight?": the vibes the host picked (empty = any music). */
+  vibes: { id: string; label: string; emoji: string }[];
+  /** Guests can only request songs that fit one of tonight's vibes. */
+  vibesOnly: boolean;
 };
 
 export type Shoutout = { id: number; message: string; createdAt: string };

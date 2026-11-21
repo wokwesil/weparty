@@ -5,6 +5,7 @@ import { normalizeSettings, type PartySettings } from "../ranking";
 import { notifyEventChanged } from "../realtime";
 import { randomEventCode } from "../security";
 import type { EventPublic } from "../types";
+import { vibeTags } from "../vibes";
 import { requireEventRole, requireOrgRole } from "./hosts";
 import { refillLock } from "./queue";
 
@@ -53,6 +54,8 @@ export function toPublicEvent(e: EventRow): EventPublic {
             photoUrl: e.dj_photo_version > 0 ? `/api/e/${e.code}/dj-photo?v=${e.dj_photo_version}` : null,
           }
         : null,
+    vibes: vibeTags(s.vibes),
+    vibesOnly: s.vibes.length > 0 && s.vibesOnly,
   };
 }
 

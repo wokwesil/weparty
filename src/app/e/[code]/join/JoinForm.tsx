@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Backdrop, PoweredBy, Wordmark } from "@/components/Brand";
+import { VibeChips } from "@/components/VibeChips";
 import { DjSpotlight } from "@/components/DjSpotlight";
 import { ApiError, apiFetch, resizeImage } from "@/lib/client";
 import { blobToDataUrl, dataUrlToBlob, forgetProfile, getSavedProfile, saveProfile, trackStep, type SavedProfile } from "@/lib/device";
@@ -19,12 +20,14 @@ export function JoinForm({
   subtitle,
   dj,
   submissionsOpen,
+  vibes = [],
 }: {
   code: string;
   eventName: string;
   subtitle: string | null;
   dj: EventPublic["dj"];
   submissionsOpen: boolean;
+  vibes?: EventPublic["vibes"];
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState<SavedProfile | null>(null);
@@ -120,6 +123,7 @@ export function JoinForm({
             <DjSpotlight dj={dj} compact />
           </div>
         )}
+        <VibeChips vibes={vibes} className="mt-3" />
       </section>
 
       {!submissionsOpen && (

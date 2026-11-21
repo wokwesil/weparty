@@ -7,6 +7,7 @@ import { Artwork } from "@/components/Artwork";
 import { Avatar, InstagramLink } from "@/components/Avatar";
 import { Backdrop, Equalizer, Wordmark } from "@/components/Brand";
 import { DjSpotlight } from "@/components/DjSpotlight";
+import { VibeChips } from "@/components/VibeChips";
 import { NowPlaying, SongCard } from "@/components/SongCard";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { apiFetch, resizeImage } from "@/lib/client";
@@ -145,6 +146,7 @@ function Room({ code, eventId }: { code: string; eventId: string }) {
           <DjSpotlight dj={data.event.dj} />
         </div>
       )}
+      {!ended && <VibeChips vibes={data.event.vibes ?? []} className="mb-3 px-1" />}
       <ShoutoutBanner shoutout={data.shoutout} />
       {ended && (
         <Link href={`/e/${code}/replay`} className="mb-4 block rounded-2xl bg-brand p-4 text-center font-bold">
