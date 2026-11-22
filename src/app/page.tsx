@@ -7,6 +7,7 @@ import { JoinByCode } from "./JoinByCode";
 
 const HOST_STEPS = [
   ["Create your party", "Free. Give it a name and you get a party code."],
+  ["Pick tonight's vibes, or keep it open", "Choose up to 6 vibes, like R&B or Afrobeats. Or skip it for an open queue where any song goes."],
   ["Put up the QR", "Print it, post it, or show it on a screen."],
   ["Play the crowd's queue", "The queue plays through Offtrack while you party."],
 ];
@@ -51,7 +52,7 @@ export default function Home() {
         <h2 id="host-steps" className="font-display text-xl font-black sm:text-2xl">
           Throwing a party? <span className="text-gradient">Host it free.</span>
         </h2>
-        <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+        <ol className="mt-4 grid gap-4 sm:grid-cols-2">
           {HOST_STEPS.map(([title, body], i) => (
             <li key={title} className="flex gap-3">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-sm font-black" aria-hidden>
