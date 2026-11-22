@@ -1,18 +1,23 @@
 # Host "Forgot password?"
 
-There are two ways a host gets back in:
+There are three ways a host gets back in:
 
-1. **By email (hosts do it themselves).** On **/host/login** tap **Forgot password?**, type the host email,
-   open the email, tap the link, type a new password twice, tap **Save and sign in**.
-   This needs email switched on (one-time setup below).
-2. **Owner reset link (works today, no setup).** The site owner opens **/admin** (Site dashboard), scrolls to
+1. **Recovery code (hosts do it themselves, works today, no setup).** On the host dashboard, a host taps
+   **Get my recovery code** and saves the code (looks like `K7QM-3XWP-9HTR-2BDN`). If they forget their
+   password: **/host/login > Forgot password?**, type email + recovery code + new password, tap **Save and sign in**.
+   Each code works once; after using it the host is shown a new one. Making a new code on the dashboard
+   cancels the old one. Only a scrypt hash of the code is stored (like a password). Limited to 5 tries per
+   email and 20 per network per hour. Needs migration `0005_recovery_codes` (runs automatically on deploy).
+2. **By email (hosts do it themselves).** Forgot password? emails a one-time link. Needs email switched on
+   (one-time setup below). Until then, the Forgot password page shows the recovery code form.
+3. **Owner reset link (for hosts without a code).** The site owner opens **/admin** (Site dashboard), scrolls to
    **Reset a host's password**, types the host's email, taps **Make reset link**, and texts/DMs the link.
-   The host opens it and picks a new password. Only platform admins can do this.
+   Only platform admins can do this.
 
-Until email is switched on, the Forgot password page tells the host honestly that email isn't on yet and
-to contact `NEXT_PUBLIC_SUPPORT_EMAIL` (if set). It never pretends an email was sent.
+Without email and without a code, the Forgot password page tells the host to contact
+`NEXT_PUBLIC_SUPPORT_EMAIL` (if set). It never pretends an email was sent.
 
-Safety details:
+Reset link safety details:
 - Every link works for **1 hour** and **only once** (all links stop working as soon as the password changes).
 - The page never says whether an email has an account, so it can't be used to find out who hosts on WeParty.
 - Limited to 3 requests per email and 10 per network every 15 minutes.
