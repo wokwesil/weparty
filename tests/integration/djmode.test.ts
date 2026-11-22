@@ -226,4 +226,21 @@ d("DJ Mode, faster join and reliability (database)", () => {
     expect(paused.find((i) => i.id === "requests")!.ok).toBe(false);
     await m.events.setSubmissionsOpen(hostId, eventId, true);
   });
+  it("tonight's vibes: only songs in the host's vibes get in, host songs and unknown genres still do", async () => {
+    await m.events.updateSettings(hostId, eventId, { vibes: ["old-school-hip-hop", "not-a-vibe"] as string[], vibesOnly: true, vibePrices: { "old-school-hip-hop": 500 } });
+    const e = await ev();
+    const pub = m.events.toPublicEvent(e);
+    expect(pub.vibes.map((v) => v.id)).toEqual(["old-school-hip-hop"]);
+    expect(pub.vibesOnly).toBe(true);
+    expect(JSON.stringify(pub)).not.toContain("500"); // prices are never sent to guests
+    const g = await join("vibe.guest");
+    await expect(m.queue.submitSongs(e, g, [song(901, { genre: "Country" })])).rejects.toThrow(/isn't tonight's vibe/);
+    await expect(m.queue.submitSongs(e, g, [song(902, { genre: "Hip-Hop/Rap" })])).resolves.toMatchObject({ added: 1 });
+    await expect(m.queue.submitSongs(e, g, [song(903, { genre: null })])).resolves.toMatchObject({ added: 1 });
+    await m.queue.hostAddSong(hostId, eventId, song(904, { genre: "Country" }));
+    // Switch strict off: anything goes again.
+    await m.events.updateSettings(hostId, eventId, { vibesOnly: false });
+    await expect(m.queue.submitSongs(await ev(), g, [song(905, { genre: "Country" })])).resolves.toMatchObject({ added: 1 });
+    await m.events.updateSettings(hostId, eventId, { vibes: [], vibesOnly: true });
+  });
 });

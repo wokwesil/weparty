@@ -10,6 +10,7 @@ import { ApiError, apiFetch } from "@/lib/client";
 import { trackStep } from "@/lib/device";
 import { hapticTap } from "@/lib/native";
 import type { Song } from "@/lib/types";
+import { songFitsAnyVibe, vibeListText, type VibeTag } from "@/lib/vibes";
 
 const plural = (n: number, word = "song") => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -23,6 +24,8 @@ export function PickTracks({
   allowExplicit,
   approvalMode,
   partySongs,
+  vibes = [],
+  vibesOnly = false,
 }: {
   code: string;
   eventName: string;
@@ -33,6 +36,8 @@ export function PickTracks({
   allowExplicit: boolean;
   approvalMode: boolean;
   partySongs: Song[];
+  vibes?: VibeTag[];
+  vibesOnly?: boolean;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Map<string, Song>>(new Map());
@@ -56,6 +61,10 @@ export function PickTracks({
     setError(null);
     if (!allowExplicit && s.explicit) {
       setError("This party is clean-only, so explicit songs can't be added.");
+      return;
+    }
+    if (vibesOnly && !selected.has(s.appleId) && !songFitsAnyVibe(s, vibes.map((v) => v.id))) {
+      setError(`"${s.title}" isn't tonight's vibe. Tonight is all ${vibeListText(vibes)}.`);
       return;
     }
     setSelected((prev) => {
@@ -143,6 +152,12 @@ export function PickTracks({
               : `You've added all ${maxPicks} of your songs. Go heart some others!`}
           {approvalMode && " The DJ approves requests before they hit the queue."}
         </p>
+        {vibes.length > 0 && (
+          <p className="mt-2 text-sm">
+            <span className="text-muted">Tonight&apos;s vibe: </span>
+            <b>{vibes.map((v) => `${v.emoji} ${v.label}`).join("  ·  ")}</b>
+          </p>
+        )}
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden>
           <motion.div className="h-full bg-brand" animate={{ width: `${progress * 100}%` }} />
         </div>
@@ -156,7 +171,12 @@ export function PickTracks({
 
       {remaining > 0 ? (
         <>
-          <SongBrowser selected={selected} onToggle={toggle} lockedIds={alreadyPicked} />
+          <SongBrowser
+            selected={selected}
+            onToggle={toggle}
+            lockedIds={alreadyPicked}
+            vibes={vibes.length ? { code, tags: vibes, only: vibesOnly } : undefined}
+          />
           {partySongs.length > 0 && (
             <section className="mt-6">
               <h2 className="mb-2 px-1 text-xs font-bold tracking-[0.3em] text-muted uppercase">Already at this party · tap to back one</h2>

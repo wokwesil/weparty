@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Backdrop, PoweredBy, Wordmark } from "@/components/Brand";
+import { VibeChips } from "@/components/VibeChips";
 import { DjSpotlight } from "@/components/DjSpotlight";
 import { HowItWorksCompact } from "@/components/HowItWorks";
 import { ApiError, apiFetch, resizeImage } from "@/lib/client";
@@ -20,6 +21,7 @@ export function JoinForm({
   subtitle,
   dj,
   submissionsOpen,
+  vibes = [],
   maxPicks,
 }: {
   code: string;
@@ -27,6 +29,7 @@ export function JoinForm({
   subtitle: string | null;
   dj: EventPublic["dj"];
   submissionsOpen: boolean;
+  vibes?: EventPublic["vibes"];
   maxPicks: number;
 }) {
   const router = useRouter();
@@ -123,6 +126,7 @@ export function JoinForm({
             <DjSpotlight dj={dj} compact />
           </div>
         )}
+        <VibeChips vibes={vibes} className="mt-3" />
         {!(useSaved && saved) && <HowItWorksCompact maxPicks={maxPicks} />}
       </section>
 
