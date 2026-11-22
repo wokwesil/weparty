@@ -51,7 +51,7 @@ export async function isAppleMusicAvailable() {
 }
 
 /**
- * Whether the built-in host/DJ player is switched on (FEATURE_HOST_PLAYER=1 on the server)
+ * Whether the built-in host/DJ player is switched on (on by default; FEATURE_HOST_PLAYER=0 hides it)
  * and Apple Music is connected. Website only, same as the other Apple Music features.
  */
 export async function isHostPlayerEnabled() {

@@ -11,7 +11,7 @@ type MK = Awaited<ReturnType<typeof connectAppleMusic>>;
 /**
  * Built-in WeParty player for the host/DJ screen (backup to Offtrack).
  *
- * - Hidden unless the server has FEATURE_HOST_PLAYER=1 and the Apple Music key is set.
+ * - Shows once the Apple Music key is set on the server (FEATURE_HOST_PLAYER=0 hides it).
  * - Plays full songs with the HOST's own Apple Music sign-in and subscription
  *   (Apple's MusicKit on the web). Guests never need Apple Music for this.
  * - Follows WeParty's "Now playing": when a song ends it moves the queue to the

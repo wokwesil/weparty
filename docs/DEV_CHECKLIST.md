@@ -37,7 +37,7 @@ Last updated: Nov 17, 2026
 - [ ] **Vercel project** (William, free) → see SETUP.md
 - [ ] **Apple Developer Program** ($99/yr) for Apple Music API, library browsing and playlist creation → APPLE_MUSIC.md
 - [ ] **App stores**: Apple Developer ($99/yr, same account as above) and Google Play Console ($25), plus `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel → APP_SETUP.md
-- [ ] **WeParty player (optional backup)**: after the Apple key, set `FEATURE_HOST_PLAYER=1` and test one real song end-to-end on a laptop → HOST_PLAYER.md
+- [ ] **WeParty player**: turns on by itself after the Apple key; test one real song end-to-end on a laptop → HOST_PLAYER.md
 - [x] **Tonight's vibes**: host picks vibes, guests request inside them (no setup needed). Per-vibe prices stay hidden/uncharged unless `FEATURE_VIBE_PRICING=1`, and even then nobody is charged → VIBES.md
 - [ ] **Offtrack**: confirm with the real app that a WeParty playlist in Apple Music opens and mixes; ask Offtrack about an API
 
@@ -54,7 +54,7 @@ Last updated: Nov 17, 2026
 - Song search without the Apple key uses Apple's public iTunes search (rate-limited ~20/min per server; cached, with phone-side fallback).
 - Instagram handles are typed, not verified (Meta offers no API for personal accounts).
 - Apple's API can't make public playlist links or reorder playlist songs; host shares the public link manually.
-- By default WeParty doesn't play audio itself. The DJ/Offtrack plays; the host taps Next song to keep WeParty in sync. Optional backup: the built-in WeParty player (FEATURE_HOST_PLAYER=1, host's own Apple Music, web browser only) → HOST_PLAYER.md.
+- By default WeParty doesn't play audio itself. The DJ/Offtrack plays; the host taps Next song to keep WeParty in sync. Optional backup: the built-in WeParty player (on once the Apple key is set, host's own Apple Music, web browser only) → HOST_PLAYER.md.
 - Offtrack live-sync behavior must be confirmed on a real device.
 
 ## Next up (after Nov 22)
