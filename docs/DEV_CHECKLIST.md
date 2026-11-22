@@ -9,7 +9,7 @@ Last updated: Nov 17, 2026
 | 1 | Branded dark welcome screen, WEPARTY wordmark, tagline, Powered by Offtrack, ENTER PARTY, animations | ✅ |
 | 2 | Multiple events per host, unique code + QR per event (PNG/SVG/printable poster), per-event guests/queue/votes/playlist, no app download | ✅ |
 | 3 | Guest profile: photo upload, display name, Instagram handle + link, songs submitted; People tab; tap-through to Instagram | ✅ |
-| 4 | PICK YOUR PARTY TRACKS: 1–10 songs (host sets min/max), search with artwork/artist/preview, multi-select tray, submit; Apple Music library/playlists/recently played tab | ✅ (library tab needs Apple key) |
+| 4 | PICK YOUR PARTY TRACKS: 1–15 songs (host sets min/max; default up to 15), search with artwork/artist/preview, multi-select tray, submit; Apple Music library/playlists/recently played tab | ✅ (library tab needs Apple key) |
 | 5 | Live queue: NOW PLAYING, UP NEXT, LIVE QUEUE, MOST POPULAR, SONG REQUESTS; hearts with optimistic update; real-time sync; animated reordering; one vote per guest per song; undo heart; playing song fixed; host override; ties by submission time | ✅ |
 | 6 | Party Shuffle: no duplicates (extra requests counted), hearts, fair rotation, no back-to-back, host locks, configurable settings, playback history | ✅ |
 | 7 | Host control room: create/edit events, QR codes, guests + Instagram, monitor requests and votes, remove, skip, reorder, mark played, pause/resume, end, replay, stats, activity log, secure roles | ✅ |
@@ -38,6 +38,7 @@ Last updated: Nov 17, 2026
 - [ ] **Apple Developer Program** ($99/yr) for Apple Music API, library browsing and playlist creation → APPLE_MUSIC.md
 - [ ] **App stores**: Apple Developer ($99/yr, same account as above) and Google Play Console ($25), plus `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel → APP_SETUP.md
 - [ ] **WeParty player**: turns on by itself after the Apple key; test one real song end-to-end on a laptop → HOST_PLAYER.md
+- [x] **Tonight's vibes**: host picks vibes, guests request inside them (no setup needed). Per-vibe prices stay hidden/uncharged unless `FEATURE_VIBE_PRICING=1`, and even then nobody is charged → VIBES.md
 - [ ] **Offtrack**: confirm with the real app that a WeParty playlist in Apple Music opens and mixes; ask Offtrack about an API
 
 ## Tests passed
@@ -59,7 +60,7 @@ Last updated: Nov 17, 2026
 ## Next up (after Nov 22)
 
 1. Verify Offtrack hand-off with the real app; adjust instructions.
-2. Host password reset by email (needs an email provider such as Resend or Supabase Auth).
+2. Host password reset: built (recovery codes on the host dashboard, Forgot password email link, owner reset link on /admin). Emails need GMAIL_USER + GMAIL_APP_PASSWORD in Vercel (docs/PASSWORD_RESET.md).
 3. Venue branding (logo/colors on guest screens) using `organizations.branding`.
 4. Paid plans (Stripe) using `organizations.plan` / `billing_customer_id`.
 5. Optional: host plays full songs in the browser via MusicKit for parties without a DJ.

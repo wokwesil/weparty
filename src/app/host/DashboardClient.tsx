@@ -182,3 +182,88 @@ export function DeleteAccount() {
     </form>
   );
 }
+
+/** Shows a recovery code once, with copy + "I saved it". */
+export function RecoveryCodeBox({ code, onDone, doneLabel = "I saved it" }: { code: string; onDone: () => void; doneLabel?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-3 rounded-2xl bg-black/30 p-4" role="status">
+      <p className="text-center font-mono text-xl font-bold tracking-wider select-all">{code}</p>
+      <p className="mt-2 text-center text-xs text-muted">
+        Screenshot it or save it in your notes. We can&apos;t show it again.
+      </p>
+      <div className="mt-3 flex flex-wrap justify-center gap-2">
+        <button
+          type="button"
+          className="btn btn-ghost min-h-11 px-4 text-sm"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(code);
+              setCopied(true);
+            } catch {
+              setCopied(false);
+            }
+          }}
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <button type="button" className="btn btn-primary min-h-11 px-4 text-sm" onClick={onDone}>{doneLabel}</button>
+      </div>
+    </div>
+  );
+}
+
+/** Recovery code: lets the host reset their password later with no email needed. */
+export function RecoveryCodePanel({ hasCode }: { hasCode: boolean }) {
+  const router = useRouter();
+  const [code, setCode] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+
+  const make = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await apiFetch<{ code: string }>("/api/host/recovery-code", { method: "POST" });
+      setCode(r.code);
+      setConfirmReplace(false);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={`glass rounded-3xl p-5 ${!hasCode && !code ? "ring-1 ring-pink/50" : ""}`}>
+      <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">Recovery code</h2>
+      {code ? (
+        <>
+          <p className="mt-2 text-sm">Your recovery code. If you forget your password, use it on the &quot;Forgot password?&quot; page.</p>
+          <RecoveryCodeBox code={code} onDone={() => { setCode(null); router.refresh(); }} />
+        </>
+      ) : hasCode ? (
+        <>
+          <p className="mt-2 text-sm text-muted">You have a recovery code saved. Lost it? Make a new one (the old one stops working).</p>
+          {confirmReplace ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button className="btn btn-primary min-h-11 px-4 text-sm" disabled={busy} onClick={make}>{busy ? "One sec…" : "Yes, make a new one"}</button>
+              <button className="btn btn-ghost min-h-11 px-4 text-sm" onClick={() => setConfirmReplace(false)}>Cancel</button>
+            </div>
+          ) : (
+            <button className="btn btn-ghost mt-3 min-h-11 px-4 text-sm" onClick={() => setConfirmReplace(true)}>Make a new code</button>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="mt-2 text-sm">
+            Get a recovery code so you can reset your password yourself if you ever forget it. Takes 10 seconds.
+          </p>
+          <button className="btn btn-primary mt-3 min-h-11 px-4 text-sm" disabled={busy} onClick={make}>{busy ? "One sec…" : "Get my recovery code"}</button>
+        </>
+      )}
+      {error && <p className="mt-3 rounded-xl bg-rose-500/15 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p>}
+    </div>
+  );
+}

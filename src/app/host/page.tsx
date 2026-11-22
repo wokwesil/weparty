@@ -4,8 +4,10 @@ import { flags } from "@/lib/flags";
 import { followerCount } from "@/lib/services/growth";
 import { listHostEvents } from "@/lib/services/events";
 import { StatusPill } from "@/components/StatusPill";
+import { isPlatformAdmin } from "@/lib/services/analytics";
 import { requireHostPage } from "./auth";
-import { DeleteAccount, HostHeaderActions, NewEventForm, TeamPanel } from "./DashboardClient";
+import { hasRecoveryCode } from "@/lib/services/recoveryCode";
+import { DeleteAccount, HostHeaderActions, NewEventForm, RecoveryCodePanel, TeamPanel } from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Host dashboard" };
@@ -19,6 +21,8 @@ export default async function HostDashboard() {
     (t, e) => ({ guests: t.guests + e.guests, songs: t.songs + e.songs, votes: t.votes + e.votes, played: t.played + e.played }),
     { guests: 0, songs: 0, votes: 0, played: 0 },
   );
+  const isOwner = await isPlatformAdmin(host.id);
+  const hasCode = await hasRecoveryCode(host.id);
   const adminOrgs = host.orgs.filter((o) => o.role !== "dj");
   const followers = flags.growth ? await Promise.all(adminOrgs.map(async (o) => ({ ...o, count: await followerCount(o.id) }))) : [];
 
@@ -29,6 +33,9 @@ export default async function HostDashboard() {
         <Link href="/" className="tap"><Wordmark size="sm" /></Link>
         <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">Host</span>
         <div className="ml-auto flex items-center gap-3 text-sm text-muted">
+          {isOwner && (
+            <Link href="/admin" className="btn btn-ghost min-h-11 px-3 py-1.5 text-xs">Site dashboard</Link>
+          )}
           <span className="hidden sm:inline">{host.displayName}</span>
           <HostHeaderActions />
         </div>
@@ -46,6 +53,7 @@ export default async function HostDashboard() {
         </div>
 
         <aside className="flex flex-col gap-6">
+          {!hasCode && <RecoveryCodePanel hasCode={false} />}
           {adminOrgs.length > 0 && <NewEventForm orgs={adminOrgs.map((o) => ({ id: o.id, name: o.name }))} requireTerms={flags.terms} />}
           <div className="glass rounded-3xl p-5">
             <h2 className="text-xs font-bold tracking-[0.3em] text-muted uppercase">All-time</h2>
@@ -84,10 +92,11 @@ export default async function HostDashboard() {
             </div>
           )}
           <TeamPanel orgs={host.orgs} />
+          {hasCode && <RecoveryCodePanel hasCode />}
           <div className="flex flex-wrap gap-x-4 gap-y-2 px-1 text-xs text-muted">
             <Link href="/support" className="tap hover:text-white">Help &amp; support</Link>
             <Link href="/privacy" className="tap hover:text-white">Privacy</Link>
-            {flags.terms && <Link href="/terms" className="tap hover:text-white">Host terms</Link>}
+            <Link href="/terms" className="tap hover:text-white">Terms &amp; Conditions</Link>
           </div>
           <DeleteAccount />
         </aside>

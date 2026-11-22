@@ -77,6 +77,12 @@ export default function PrivacyPage() {
             Your IP address is used briefly to stop abuse (for example, too many sign-in attempts). It is kept in a short-lived
             counter, not linked to your profile.
           </li>
+          <li>
+            We count visits to understand how We Party is used: which pages are opened, roughly where from (city and country, worked
+            out by our hosting provider; we don&apos;t store your IP address), the type of device and browser, the site that sent you,
+            and whether you are on the site right now. This is linked to a random id your browser keeps and, if you joined a
+            party, to your guest profile. Only the We Party team can see it. Page-by-page history is deleted after 180 days.
+          </li>
           <li>Our hosting provider keeps standard server logs (such as IP address, browser type and pages requested) for security.</li>
           <li>
             Your device remembers small settings, such as whether you closed the &quot;Install We Party&quot; tip. These stay on your
@@ -115,7 +121,7 @@ export default function PrivacyPage() {
           </li>
           <li>Tapping an Instagram username opens Instagram, which has its own privacy policy.</li>
         </ul>
-        <p>We do not use advertising or analytics companies, and we do not sell or rent personal information.</p>
+        <p>We do not use outside advertising or analytics companies (our visit counts stay in our own database), and we do not sell or rent personal information.</p>
       </InfoSection>
 
       <InfoSection title="How long we keep it">

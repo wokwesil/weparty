@@ -3,6 +3,7 @@ import "@fontsource-variable/unbounded";
 import "@fontsource-variable/inter";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { SiteTracker } from "@/components/SiteTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased">
         {children}
         <AppShell />
+        <SiteTracker />
       </body>
     </html>
   );

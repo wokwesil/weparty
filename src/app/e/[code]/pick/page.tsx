@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { normalizeSettings } from "@/lib/ranking";
+import { vibeTags } from "@/lib/vibes";
 import { effectiveApproval, getEventByCode } from "@/lib/services/events";
 import { getGuestPickedAppleIds, getSnapshot } from "@/lib/services/queue";
 import { currentGuest } from "@/lib/session";
@@ -50,6 +51,8 @@ export default async function PickPage({ params }: Props) {
       allowExplicit={s.allowExplicit}
       approvalMode={effectiveApproval(s)}
       partySongs={partySongs}
+      vibes={vibeTags(s.vibes)}
+      vibesOnly={s.vibes.length > 0 && s.vibesOnly}
     />
   );
 }

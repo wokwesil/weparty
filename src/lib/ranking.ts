@@ -20,6 +20,7 @@
  * The song that is currently playing never moves: it is not part of the
  * ranked queue at all.
  */
+import { cleanVibeIds, cleanVibePrices } from "./vibes";
 
 export type PartySettings = {
   heartWeight: number;
@@ -42,6 +43,16 @@ export type PartySettings = {
   /** DJ Spotlight: shown on guest screens and the replay ("DJ ___ is spinning"). */
   djName: string;
   djInstagram: string;
+  /** "What's the vibe tonight?": vibe ids the host picked (see src/lib/vibes.ts). Empty = any music. */
+  vibes: string[];
+  /** Only take guest requests that fit one of tonight's vibes (only matters when vibes are picked). */
+  vibesOnly: boolean;
+  /**
+   * Host's price per vibe, in cents. Saved for later only: WeParty is free, so
+   * guests are never charged and never see these. Hosts only see the price
+   * boxes when FEATURE_VIBE_PRICING=1.
+   */
+  vibePrices: Record<string, number>;
 };
 
 export const DEFAULT_SETTINGS: PartySettings = {
@@ -51,7 +62,7 @@ export const DEFAULT_SETTINGS: PartySettings = {
   noBackToBack: true,
   backToBackLookahead: 3,
   minPicks: 1,
-  maxPicks: 10,
+  maxPicks: 15,
   allowExplicit: true,
   replayShowPeople: true,
   djMode: false,
@@ -59,6 +70,9 @@ export const DEFAULT_SETTINGS: PartySettings = {
   lockCount: 0,
   djName: "",
   djInstagram: "",
+  vibes: [],
+  vibesOnly: true,
+  vibePrices: {},
 };
 
 export function normalizeSettings(raw: unknown): PartySettings {
@@ -89,6 +103,9 @@ export function normalizeSettings(raw: unknown): PartySettings {
     lockCount: Math.round(num("lockCount", 0, 5)),
     djName: text("djName", 60),
     djInstagram: /^[a-z0-9._]{1,30}$/.test(ig) ? ig : "",
+    vibes: cleanVibeIds(s.vibes),
+    vibesOnly: bool("vibesOnly"),
+    vibePrices: cleanVibePrices(s.vibePrices),
   };
 }
 

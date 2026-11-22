@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Backdrop, PoweredBy, Wordmark } from "./Brand";
 
-/** Simple readable page layout for Privacy and Support. */
+/** Simple readable page layout for Privacy, Terms and Support. */
 export function InfoPage({ title, intro, children }: { title: string; intro?: React.ReactNode; children: React.ReactNode }) {
   return (
     <main className="relative mx-auto min-h-dvh max-w-2xl px-5 pb-16 pt-[max(1rem,env(safe-area-inset-top))]">
@@ -13,6 +13,7 @@ export function InfoPage({ title, intro, children }: { title: string; intro?: Re
         <nav className="flex gap-4 text-sm text-muted">
           <Link href="/support" className="tap hover:text-white">Support</Link>
           <Link href="/privacy" className="tap hover:text-white">Privacy</Link>
+          <Link href="/terms" className="tap hover:text-white">Terms</Link>
         </nav>
       </header>
       <h1 className="mt-6 font-display text-3xl font-black">{title}</h1>

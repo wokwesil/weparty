@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Artwork } from "./Artwork";
 import { searchCatalog } from "@/lib/client-search";
-import { formatDuration } from "@/lib/client";
+import { apiFetch, formatDuration } from "@/lib/client";
 import {
   connectAppleMusic,
   isAppleMusicAvailable,
@@ -13,8 +13,12 @@ import {
   type LibraryPlaylist,
 } from "@/lib/musickit";
 import type { Song } from "@/lib/types";
+import { getVibe, songFitsAnyVibe, songFitsVibe, type VibeTag } from "@/lib/vibes";
 
 type Mode = "search" | "apple";
+
+/** Tonight's vibes, for guests at a party (hosts don't pass this). */
+export type VibeOptions = { code: string; tags: VibeTag[]; only: boolean };
 
 /** Search Apple Music (or the free Apple catalog fallback), or browse your own Apple Music library. */
 export function SongBrowser({
@@ -22,11 +26,13 @@ export function SongBrowser({
   onToggle,
   lockedIds = [],
   lockedLabel = "Added",
+  vibes,
 }: {
   selected: Map<string, Song>;
   onToggle: (song: Song) => void;
   lockedIds?: string[];
   lockedLabel?: string;
+  vibes?: VibeOptions;
 }) {
   const [mode, setMode] = useState<Mode>("search");
   const [appleAvailable, setAppleAvailable] = useState(false);
@@ -52,9 +58,13 @@ export function SongBrowser({
         </div>
       )}
       {mode === "search" ? (
-        <SearchPane selected={selected} onToggle={onToggle} lockedIds={lockedIds} lockedLabel={lockedLabel} />
+        vibes && vibes.tags.length > 0 ? (
+          <VibeSearchPane selected={selected} onToggle={onToggle} lockedIds={lockedIds} lockedLabel={lockedLabel} vibes={vibes} />
+        ) : (
+          <SearchPane selected={selected} onToggle={onToggle} lockedIds={lockedIds} lockedLabel={lockedLabel} />
+        )
       ) : (
-        <ApplePane selected={selected} onToggle={onToggle} lockedIds={lockedIds} lockedLabel={lockedLabel} />
+        <ApplePane selected={selected} onToggle={onToggle} lockedIds={lockedIds} lockedLabel={lockedLabel} vibes={vibes} />
       )}
     </div>
   );
@@ -172,6 +182,8 @@ function ApplePane(props: Parameters<typeof SongBrowser>[0]) {
 
   const mk = mkRef.current!;
   if (view) {
+    const shown = props.vibes?.only ? view.songs.filter((s) => songFitsAnyVibe(s, props.vibes!.tags.map((t) => t.id))) : view.songs;
+    const hidden = view.songs.length - shown.length;
     return (
       <div className="flex flex-col gap-3">
         <button className="self-start text-sm text-muted hover:text-white" onClick={() => setView(null)}>
@@ -179,7 +191,8 @@ function ApplePane(props: Parameters<typeof SongBrowser>[0]) {
         </button>
         <h3 className="font-display text-lg font-bold">{view.title}</h3>
         {view.songs.length === 0 && <p className="text-sm text-muted">No Apple Music catalog songs here.</p>}
-        <SongList songs={view.songs} {...props} />
+        {hidden > 0 && <p className="text-sm text-muted">{hidden} {hidden === 1 ? "song isn't" : "songs aren't"} tonight&apos;s vibe, so {hidden === 1 ? "it's" : "they're"} hidden.</p>}
+        <SongList songs={shown} {...props} />
       </div>
     );
   }
@@ -282,5 +295,141 @@ export function SongList({
         );
       })}
     </ul>
+  );
+}
+
+/* ------------------------------------------------------------------------ */
+/* "What's the vibe tonight?": browse and search inside the host's vibes     */
+/* ------------------------------------------------------------------------ */
+
+const ANY = "any";
+
+function VibeSearchPane(props: Parameters<typeof SongBrowser>[0] & { vibes: VibeOptions }) {
+  const { vibes } = props;
+  const [active, setActive] = useState<string>(vibes.tags[0].id);
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<Song[]>([]);
+  const [crates, setCrates] = useState<Record<string, Song[] | "loading" | "error">>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const seq = useRef(0);
+  const activeTag = vibes.tags.find((t) => t.id === active) ?? null;
+  const term = q.trim();
+
+  // Starter crate for the selected vibe (loaded once per vibe).
+  useEffect(() => {
+    if (active === ANY || crates[active]) return;
+    setCrates((c) => ({ ...c, [active]: "loading" }));
+    apiFetch<{ songs: Song[] }>(`/api/e/${vibes.code}/vibes/${active}`)
+      .then((r) => setCrates((c) => ({ ...c, [active]: r.songs })))
+      .catch(() => setCrates((c) => ({ ...c, [active]: "error" })));
+  }, [active, crates, vibes.code]);
+
+  useEffect(() => {
+    if (term.length < 2) {
+      setResults([]);
+      setError(null);
+      return;
+    }
+    const my = ++seq.current;
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await searchCatalog(term);
+        if (my === seq.current) {
+          setResults(res.songs);
+          setError(null);
+        }
+      } catch (e) {
+        if (my === seq.current) setError((e as Error).message);
+      } finally {
+        if (my === seq.current) setLoading(false);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [term]);
+
+  const ids = vibes.tags.map((t) => t.id);
+  const fits = (s: Song) => {
+    if (active !== ANY) {
+      const v = getVibe(active);
+      return !v || songFitsVibe(s, v) !== false;
+    }
+    return !vibes.only || songFitsAnyVibe(s, ids);
+  };
+  const shown = results.filter(fits);
+  const hidden = results.length - shown.length;
+  const crate = active === ANY ? null : crates[active];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="mb-2 px-1 text-xs font-bold tracking-[0.3em] text-muted uppercase">Tonight&apos;s vibes</p>
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4" role="tablist" aria-label="Tonight's vibes">
+          {[...vibes.tags, ...(vibes.tags.length > 1 || !vibes.only ? [{ id: ANY, label: vibes.only ? "All tonight's vibes" : "Anything", emoji: "🎶" }] : [])].map(
+            (t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={active === t.id}
+                onClick={() => setActive(t.id)}
+                className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  active === t.id ? "bg-white text-night" : "bg-white/5 text-muted hover:text-white"
+                }`}
+              >
+                <span aria-hidden>{t.emoji}</span> {t.label}
+              </button>
+            ),
+          )}
+        </div>
+      </div>
+      <div className="relative">
+        <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 stroke-muted" fill="none" strokeWidth="2" aria-hidden>
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          className="field pl-12"
+          type="search"
+          placeholder={activeTag ? `Search ${activeTag.label}` : "Search songs or artists"}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search songs"
+          enterKeyHint="search"
+        />
+      </div>
+
+      {term.length >= 2 ? (
+        <>
+          {loading && <p className="text-center text-sm text-muted">Searching…</p>}
+          {error && <p className="text-center text-sm text-rose-300">{error}</p>}
+          {!loading && !error && shown.length === 0 && (
+            <p className="text-center text-sm text-muted">
+              {hidden > 0 ? `Nothing in ${activeTag ? activeTag.label : "tonight's vibes"} for that search. Try another artist.` : "No songs found. Try another search."}
+            </p>
+          )}
+          {hidden > 0 && shown.length > 0 && (
+            <p className="px-1 text-xs text-muted">
+              {hidden} {hidden === 1 ? "result is" : "results are"} outside {activeTag ? activeTag.label : "tonight's vibes"}
+              {vibes.only ? "." : ", so hidden here. Tap “Anything” to see them."}
+            </p>
+          )}
+          <SongList songs={shown} {...props} label="Search results" />
+        </>
+      ) : crate === "loading" ? (
+        <p className="text-center text-sm text-muted">Pulling the {activeTag?.label} crate…</p>
+      ) : crate === "error" || (Array.isArray(crate) && crate.length === 0) ? (
+        <p className="text-center text-sm text-muted">Search above to find songs in {activeTag?.label}.</p>
+      ) : Array.isArray(crate) ? (
+        <section>
+          <h2 className="mb-1 px-1 text-xs font-bold tracking-[0.3em] text-muted uppercase">
+            {activeTag?.emoji} {activeTag?.label} · tap to add
+          </h2>
+          <SongList songs={crate} {...props} label={`${activeTag?.label} songs`} />
+        </section>
+      ) : (
+        <p className="text-center text-sm text-muted">Search any song or artist in tonight&apos;s vibes.</p>
+      )}
+    </div>
   );
 }

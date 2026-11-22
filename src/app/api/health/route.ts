@@ -7,7 +7,7 @@ import { api } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 /** The newest database update this version of the app needs. */
-const LATEST_MIGRATION = "0003_growth";
+const LATEST_MIGRATION = "0005_recovery_codes";
 
 /** Quick check that the app and database are working. Shows no secrets. */
 export const GET = api(async () => {

@@ -60,13 +60,13 @@ d("DJ Mode, faster join and reliability (database)", () => {
     const r = await m.queue.submitSongs(await ev(), a, [song(1)]);
     expect(r).toMatchObject({ added: 1, total: 1, firstTime: true });
     // Add more later, one at a time
-    for (let n = 2; n <= 10; n++) await m.queue.submitSongs(await ev(), a, [song(n)]);
-    await expect(m.queue.submitSongs(await ev(), a, [song(11)])).rejects.toThrow(/already added your 10/);
+    for (let n = 2; n <= 15; n++) await m.queue.submitSongs(await ev(), a, [song(n)]);
+    await expect(m.queue.submitSongs(await ev(), a, [song(16)])).rejects.toThrow(/already added your 15/);
     // Host lowers the limit for the next guests
     await m.events.updateSettings(hostId, eventId, { maxPicks: 3 });
     const b = await join("limited");
     await expect(m.queue.submitSongs(await ev(), b, [song(20), song(21), song(22), song(23)])).rejects.toThrow(/can add 3 more/);
-    await m.events.updateSettings(hostId, eventId, { maxPicks: 10 });
+    await m.events.updateSettings(hostId, eventId, { maxPicks: 15 });
   });
 
   it("the shared queue snapshot updates as soon as anything changes", async () => {
@@ -225,5 +225,22 @@ d("DJ Mode, faster join and reliability (database)", () => {
     const paused = await m.dj.getPartyCheck(hostId, eventId, "https://weparty.example/e/abc");
     expect(paused.find((i) => i.id === "requests")!.ok).toBe(false);
     await m.events.setSubmissionsOpen(hostId, eventId, true);
+  });
+  it("tonight's vibes: only songs in the host's vibes get in, host songs and unknown genres still do", async () => {
+    await m.events.updateSettings(hostId, eventId, { vibes: ["old-school-hip-hop", "not-a-vibe"] as string[], vibesOnly: true, vibePrices: { "old-school-hip-hop": 500 } });
+    const e = await ev();
+    const pub = m.events.toPublicEvent(e);
+    expect(pub.vibes.map((v) => v.id)).toEqual(["old-school-hip-hop"]);
+    expect(pub.vibesOnly).toBe(true);
+    expect(JSON.stringify(pub)).not.toContain("500"); // prices are never sent to guests
+    const g = await join("vibe.guest");
+    await expect(m.queue.submitSongs(e, g, [song(901, { genre: "Country" })])).rejects.toThrow(/isn't tonight's vibe/);
+    await expect(m.queue.submitSongs(e, g, [song(902, { genre: "Hip-Hop/Rap" })])).resolves.toMatchObject({ added: 1 });
+    await expect(m.queue.submitSongs(e, g, [song(903, { genre: null })])).resolves.toMatchObject({ added: 1 });
+    await m.queue.hostAddSong(hostId, eventId, song(904, { genre: "Country" }));
+    // Switch strict off: anything goes again.
+    await m.events.updateSettings(hostId, eventId, { vibesOnly: false });
+    await expect(m.queue.submitSongs(await ev(), g, [song(905, { genre: "Country" })])).resolves.toMatchObject({ added: 1 });
+    await m.events.updateSettings(hostId, eventId, { vibes: [], vibesOnly: true });
   });
 });
