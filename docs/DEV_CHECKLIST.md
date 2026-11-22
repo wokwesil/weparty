@@ -9,7 +9,7 @@ Last updated: Nov 17, 2026
 | 1 | Branded dark welcome screen, WEPARTY wordmark, tagline, Powered by Offtrack, ENTER PARTY, animations | ✅ |
 | 2 | Multiple events per host, unique code + QR per event (PNG/SVG/printable poster), per-event guests/queue/votes/playlist, no app download | ✅ |
 | 3 | Guest profile: photo upload, display name, Instagram handle + link, songs submitted; People tab; tap-through to Instagram | ✅ |
-| 4 | PICK YOUR PARTY TRACKS: 1–10 songs (host sets min/max), search with artwork/artist/preview, multi-select tray, submit; Apple Music library/playlists/recently played tab | ✅ (library tab needs Apple key) |
+| 4 | PICK YOUR PARTY TRACKS: 1–15 songs (host sets min/max; default up to 15), search with artwork/artist/preview, multi-select tray, submit; Apple Music library/playlists/recently played tab | ✅ (library tab needs Apple key) |
 | 5 | Live queue: NOW PLAYING, UP NEXT, LIVE QUEUE, MOST POPULAR, SONG REQUESTS; hearts with optimistic update; real-time sync; animated reordering; one vote per guest per song; undo heart; playing song fixed; host override; ties by submission time | ✅ |
 | 6 | Party Shuffle: no duplicates (extra requests counted), hearts, fair rotation, no back-to-back, host locks, configurable settings, playback history | ✅ |
 | 7 | Host control room: create/edit events, QR codes, guests + Instagram, monitor requests and votes, remove, skip, reorder, mark played, pause/resume, end, replay, stats, activity log, secure roles | ✅ |
