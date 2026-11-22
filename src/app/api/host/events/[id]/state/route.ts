@@ -1,4 +1,5 @@
 import { notFound } from "@/lib/errors";
+import { flags } from "@/lib/flags";
 import { normalizeSettings } from "@/lib/ranking";
 import { getEventById } from "@/lib/services/events";
 import { listPeople } from "@/lib/services/guests";
@@ -39,5 +40,6 @@ export const GET = api(async (_req: Request, ctx: Ctx) => {
     blocks,
     reports,
     djPhotoUrl: djPhoto,
+    features: { vibePricing: flags.vibePricing },
   };
 });

@@ -6,6 +6,7 @@ import { blockMatch, type BlockEntry } from "../blocklist";
 import { normalizeSettings, rankQueue } from "../ranking";
 import { notifyEventChanged } from "../realtime";
 import type { PersonRef, QueueSnapshot, Shoutout, Song, SongView } from "../types";
+import { songFitsAnyVibe, vibeListText, vibeTags } from "../vibes";
 import { effectiveApproval, effectiveLock, getEventById, logEvent, toPublicEvent, type EventRow } from "./events";
 import { avatarUrl, type GuestRow } from "./guests";
 import { requireEventRole } from "./hosts";
@@ -274,6 +275,12 @@ export async function submitSongs(event: EventRow, guest: GuestRow, rawSongs: un
   for (const raw of rawSongs.slice(0, 50)) {
     const s = cleanSong(raw);
     if (!settings.allowExplicit && s.explicit) throw badRequest(`"${s.title}" is explicit, and this party is clean-only.`, "explicit");
+    if (settings.vibes.length > 0 && settings.vibesOnly && !songFitsAnyVibe(s, settings.vibes)) {
+      throw badRequest(
+        `"${s.title}" isn't tonight's vibe. This party is all ${vibeListText(vibeTags(settings.vibes))}. Pick something in that lane!`,
+        "off_vibe",
+      );
+    }
     unique.set(s.appleId, s);
   }
   const songs = [...unique.values()];
