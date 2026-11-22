@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Backdrop, PoweredBy, Wordmark } from "@/components/Brand";
 import { DjSpotlight } from "@/components/DjSpotlight";
+import { HowItWorksCompact } from "@/components/HowItWorks";
 import { ApiError, apiFetch, resizeImage } from "@/lib/client";
 import { blobToDataUrl, dataUrlToBlob, forgetProfile, getSavedProfile, saveProfile, trackStep, type SavedProfile } from "@/lib/device";
 import type { EventPublic } from "@/lib/types";
@@ -19,12 +20,14 @@ export function JoinForm({
   subtitle,
   dj,
   submissionsOpen,
+  maxPicks,
 }: {
   code: string;
   eventName: string;
   subtitle: string | null;
   dj: EventPublic["dj"];
   submissionsOpen: boolean;
+  maxPicks: number;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState<SavedProfile | null>(null);
@@ -120,6 +123,7 @@ export function JoinForm({
             <DjSpotlight dj={dj} compact />
           </div>
         )}
+        {!(useSaved && saved) && <HowItWorksCompact maxPicks={maxPicks} />}
       </section>
 
       {!submissionsOpen && (
