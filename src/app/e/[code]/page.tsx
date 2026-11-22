@@ -55,6 +55,7 @@ export default async function EventWelcome({ params }: Props) {
       dj={pub.dj}
       submissionsOpen={pub.submissionsOpen}
       vibes={pub.vibes}
+      maxPicks={pub.maxPicks}
     />
   );
 }

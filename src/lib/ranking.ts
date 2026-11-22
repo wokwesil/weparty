@@ -62,7 +62,7 @@ export const DEFAULT_SETTINGS: PartySettings = {
   noBackToBack: true,
   backToBackLookahead: 3,
   minPicks: 1,
-  maxPicks: 10,
+  maxPicks: 15,
   allowExplicit: true,
   replayShowPeople: true,
   djMode: false,

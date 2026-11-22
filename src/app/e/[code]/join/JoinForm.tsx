@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Backdrop, PoweredBy, Wordmark } from "@/components/Brand";
 import { VibeChips } from "@/components/VibeChips";
 import { DjSpotlight } from "@/components/DjSpotlight";
+import { HowItWorksCompact } from "@/components/HowItWorks";
 import { ApiError, apiFetch, resizeImage } from "@/lib/client";
 import { blobToDataUrl, dataUrlToBlob, forgetProfile, getSavedProfile, saveProfile, trackStep, type SavedProfile } from "@/lib/device";
 import type { EventPublic } from "@/lib/types";
@@ -21,6 +22,7 @@ export function JoinForm({
   dj,
   submissionsOpen,
   vibes = [],
+  maxPicks,
 }: {
   code: string;
   eventName: string;
@@ -28,6 +30,7 @@ export function JoinForm({
   dj: EventPublic["dj"];
   submissionsOpen: boolean;
   vibes?: EventPublic["vibes"];
+  maxPicks: number;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState<SavedProfile | null>(null);
@@ -124,6 +127,7 @@ export function JoinForm({
           </div>
         )}
         <VibeChips vibes={vibes} className="mt-3" />
+        {!(useSaved && saved) && <HowItWorksCompact maxPicks={maxPicks} />}
       </section>
 
       {!submissionsOpen && (

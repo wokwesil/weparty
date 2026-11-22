@@ -60,13 +60,13 @@ d("DJ Mode, faster join and reliability (database)", () => {
     const r = await m.queue.submitSongs(await ev(), a, [song(1)]);
     expect(r).toMatchObject({ added: 1, total: 1, firstTime: true });
     // Add more later, one at a time
-    for (let n = 2; n <= 10; n++) await m.queue.submitSongs(await ev(), a, [song(n)]);
-    await expect(m.queue.submitSongs(await ev(), a, [song(11)])).rejects.toThrow(/already added your 10/);
+    for (let n = 2; n <= 15; n++) await m.queue.submitSongs(await ev(), a, [song(n)]);
+    await expect(m.queue.submitSongs(await ev(), a, [song(16)])).rejects.toThrow(/already added your 15/);
     // Host lowers the limit for the next guests
     await m.events.updateSettings(hostId, eventId, { maxPicks: 3 });
     const b = await join("limited");
     await expect(m.queue.submitSongs(await ev(), b, [song(20), song(21), song(22), song(23)])).rejects.toThrow(/can add 3 more/);
-    await m.events.updateSettings(hostId, eventId, { maxPicks: 10 });
+    await m.events.updateSettings(hostId, eventId, { maxPicks: 15 });
   });
 
   it("the shared queue snapshot updates as soon as anything changes", async () => {
