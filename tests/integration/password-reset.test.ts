@@ -51,6 +51,16 @@ d("host password reset (database)", () => {
     await expect(reset.resetPasswordWithToken(await signHostSession(hostId), "whatever123")).rejects.toThrow(/expired/);
   });
 
+  it("owner reset link: made by email (any case) and signs the host in with a new password", async () => {
+    expect(await reset.resetLinkForEmail("nobody-here@test.weparty", "http://x")).toBeNull();
+    const made = await reset.resetLinkForEmail(`  ${email.toUpperCase()} `, "https://weparty.test");
+    expect(made?.email).toBe(email);
+    expect(made?.link.startsWith("https://weparty.test/host/reset#")).toBe(true);
+    const t = made!.link.split("#")[1];
+    expect(await reset.resetPasswordWithToken(t, "owner made pass")).toBe(hostId);
+    expect(await hosts.loginHost(email, "owner made pass")).toBe(hostId);
+  });
+
   it("does nothing visible for unknown emails", async () => {
     await expect(reset.requestPasswordReset("nobody-here@test.weparty", "http://localhost")).resolves.toBeUndefined();
   });
