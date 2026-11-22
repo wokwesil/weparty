@@ -72,23 +72,23 @@ d("party flow (database)", () => {
     // same Instagram can't register twice in one event
     await expect(m.guests.registerGuest(e, { displayName: "x", instagram: "BOB_DJ" })).rejects.toThrow(/already at this party/);
 
-    // the host can require more than one song (default is 1), at most 10 total
+    // the host can require more than one song (default is 1), at most 15 total
     await m.events.updateSettings(hostId, eventId, { minPicks: 5 });
     await expect(m.queue.submitSongs(await ev(), g[0], songs(1, 3))).rejects.toThrow(/at least 5/);
     await m.events.updateSettings(hostId, eventId, { minPicks: 1 });
-    await expect(m.queue.submitSongs(e, g[0], songs(1, 11))).rejects.toThrow(/up to|can add|already added/);
+    await expect(m.queue.submitSongs(e, g[0], songs(1, 16))).rejects.toThrow(/up to|can add|already added/);
     expect(await m.queue.submitSongs(e, g[0], songs(1, 5))).toMatchObject({ added: 5, total: 5 });
     expect(await m.queue.submitSongs(e, g[1], songs(10, 5))).toMatchObject({ added: 5 });
     // cara picks 2 songs alice already picked: no duplicates, counted as requests
     const r = await m.queue.submitSongs(e, g[2], [...songs(1, 2), ...songs(20, 3)]);
     expect(r).toMatchObject({ added: 3, joined: 2 });
     expect(await m.queue.submitSongs(e, g[3], songs(30, 5))).toMatchObject({ added: 5 });
-    // adding more later works one at a time, up to 10
-    await m.queue.submitSongs(e, g[0], songs(40, 5));
-    await expect(m.queue.submitSongs(e, g[0], [song(50)])).rejects.toThrow(/already added your 10/);
+    // adding more later works one at a time, up to 15
+    await m.queue.submitSongs(e, g[0], songs(40, 10));
+    await expect(m.queue.submitSongs(e, g[0], [song(50)])).rejects.toThrow(/already added your 15/);
 
     let snap = await m.queue.getSnapshot(await ev());
-    expect(snap.queue.length).toBe(5 + 5 + 3 + 5 + 5);
+    expect(snap.queue.length).toBe(5 + 5 + 3 + 5 + 10);
     expect(snap.stats.guests).toBe(4);
     const s1 = snap.queue.find((s) => s.appleSongId === "test-1")!;
     expect(s1.requests).toBe(2);

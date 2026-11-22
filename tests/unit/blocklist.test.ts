@@ -23,7 +23,7 @@ describe("DJ blocklist", () => {
 describe("party settings", () => {
   it("defaults to 1 to 10 songs per guest with DJ Mode off", () => {
     expect(DEFAULT_SETTINGS.minPicks).toBe(1);
-    expect(DEFAULT_SETTINGS.maxPicks).toBe(10);
+    expect(DEFAULT_SETTINGS.maxPicks).toBe(15);
     expect(normalizeSettings({}).djMode).toBe(false);
   });
   it("cleans DJ fields and keeps the lock between 0 and 5", () => {
